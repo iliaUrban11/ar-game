@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>AR Catch Game - 3 Шкалы</title>
+  <title>AR Лови Модели!</title>
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
   <script src="https://jeromeetienne.github.io/AR.js/aframe/build/aframe-ar.js"></script>
   <style>
@@ -20,7 +20,7 @@
     #startBtn { padding: 15px 30px; font-size: 1.5em; background: #ff6b6b; color: white; border: none; border-radius: 50px; cursor: pointer; transition: transform 0.2s; }
     #startBtn:hover { transform: scale(1.05); }
     
-    /* Игровой UI (оверлей) */
+    /* Игровой UI */
     #ui { position: fixed; top: 20px; left: 20px; right: 20px; z-index: 999; color: white; pointer-events: none; }
     #timer { font-size: 2em; text-align: center; margin-bottom: 10px; }
     .scale { margin: 10px 0; background: rgba(255,255,255,0.2); border-radius: 10px; height: 20px; overflow: hidden; }
@@ -28,31 +28,31 @@
     #red { background: #ff4757; }
     #green { background: #2ed573; }
     #blue { background: #3742fa; }
+    
+    /* Итоги */
     #results { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; flex-direction: column; justify-content: center; align-items: center; color: white; text-align: center; z-index: 1001; }
     #results h2 { font-size: 3em; margin: 0 0 20px; }
     #restartBtn { padding: 15px 30px; font-size: 1.2em; background: #00b894; color: white; border: none; border-radius: 50px; cursor: pointer; }
-    
-    /* Скрытие A-Frame на старте */
-    #arScene { display: none; }
   </style>
 </head>
 <body>
+
   <!-- Приветственный экран -->
   <div id="welcome">
-    <h1>🎮 AR Лови Шкалы!</h1>
-    <p>Наведите камеру на маркер. Ловите летающие сферы касанием!<br>Красные → красная шкала | Зелёные → зелёная | Синие → синяя<br>30 секунд — максимум заполнения!</p>
-    <button id="startBtn">🚀 СТАРТ</button>
+    <h1>AR Лови Модели!</h1>
+    <p>Наведите камеру на маркер.<br>Ловите <strong>монеты</strong>, <strong>звёзды</strong>, <strong>кристаллы</strong>!<br>30 секунд — заполните шкалы!</p>
+    <button id="startBtn">СТАРТ</button>
   </div>
 
-  <!-- Игровой UI -->
+  <!-- UI -->
   <div id="ui">
     <div id="timer">30</div>
-    <div>Красные: <div class="scale"><div id="red-fill" class="scale-fill" style="width:0%"></div></div></div>
-    <div>Зелёные: <div class="scale"><div id="green-fill" class="scale-fill" style="width:0%"></div></div></div>
-    <div>Синие: <div class="scale"><div id="blue-fill" class="scale-fill" style="width:0%"></div></div></div>
+    <div>Монеты: <div class="scale"><div id="red-fill" class="scale-fill" style="width:0%"></div></div></div>
+    <div>Звёзды: <div class="scale"><div id="green-fill" class="scale-fill" style="width:0%"></div></div></div>
+    <div>Кристаллы: <div class="scale"><div id="blue-fill" class="scale-fill" style="width:0%"></div></div></div>
   </div>
 
-  <!-- Экран итогов -->
+  <!-- Итоги -->
   <div id="results">
     <h2 id="finalScore">ИТОГИ</h2>
     <p id="finalDetails"></p>
@@ -60,59 +60,57 @@
   </div>
 
   <!-- AR Сцена -->
-  <a-scene id="arScene" embedded arjs="sourceType: webcam; debugUIEnabled: false;">
+  <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
+    
+    <!-- Загрузка моделей (из той же папки main/) -->
+    <a-assets timeout="15000">
+      <a-asset-item id="red-model" src="red.glb"></a-asset-item>
+      <a-asset-item id="green-model" src="green.glb"></a-asset-item>
+      <a-asset-item id="blue-model" src="blue.glb"></a-asset-item>
+    </a-assets>
+
     <a-marker preset="hiro">
       <a-entity id="gameArea"></a-entity>
     </a-marker>
-    <a-entity camera look-controls="enabled: false"></a-entity>
+    <a-entity camera></a-entity>
   </a-scene>
 
   <script>
-    // Переменные игры
+    // Переменные
     let gameActive = false;
     let timeLeft = 30;
     let scores = { red: 0, green: 0, blue: 0 };
-    let timerInterval;
-    let spawnInterval;
-    const maxScore = 20; // Полная шкала на 20 ловлях
+    let timerInterval, spawnInterval;
+    const maxScore = 20;
 
-    // DOM элементы
+    // DOM
     const welcome = document.getElementById('welcome');
-    const arScene = document.getElementById('arScene');
     const ui = document.getElementById('ui');
     const timerEl = document.getElementById('timer');
-    const fills = {
-      red: document.getElementById('red-fill'),
-      green: document.getElementById('green-fill'),
-      blue: document.getElementById('blue-fill')
-    };
+    const fills = { red: document.getElementById('red-fill'), green: document.getElementById('green-fill'), blue: document.getElementById('blue-fill') };
     const results = document.getElementById('results');
     const finalScoreEl = document.getElementById('finalScore');
     const finalDetailsEl = document.getElementById('finalDetails');
 
-    // Старт игры
-    document.getElementById('startBtn').addEventListener('click', startGame);
-    document.getElementById('restartBtn').addEventListener('click', restartGame);
+    // Кнопки
+    document.getElementById('startBtn').onclick = startGame;
+    document.getElementById('restartBtn').onclick = restartGame;
 
     function startGame() {
       welcome.style.display = 'none';
-      arScene.style.display = 'block';
       ui.style.pointerEvents = 'none';
       gameActive = true;
       timeLeft = 30;
       scores = { red: 0, green: 0, blue: 0 };
       updateUI();
 
-      // Таймер
       timerInterval = setInterval(() => {
         timeLeft--;
         timerEl.textContent = timeLeft;
-        updateUI();
         if (timeLeft <= 0) endGame();
       }, 1000);
 
-      // Спавн объектов
-      spawnInterval = setInterval(spawnObject, 800 + Math.random() * 800);
+      spawnInterval = setInterval(spawnObject, 1000);
     }
 
     function spawnObject() {
@@ -120,18 +118,20 @@
 
       const colors = ['red', 'green', 'blue'];
       const color = colors[Math.floor(Math.random() * 3)];
-      const obj = document.createElement('a-sphere');
-      obj.setAttribute('radius', '0.08');
-      obj.setAttribute('color', color === 'red' ? '#ff4757' : color === 'green' ? '#2ed573' : '#3742fa');
+      const modelId = color === 'red' ? '#red-model' : color === 'green' ? '#green-model' : '#blue-model';
+
+      const obj = document.createElement('a-entity');
+      obj.setAttribute('gltf-model', modelId);
+      obj.setAttribute('scale', '0.3 0.3 0.3');
       obj.setAttribute('position', `${(Math.random() - 0.5) * 4} ${1 + Math.random() * 2} ${(Math.random() - 0.5) * 4}`);
       obj.setAttribute('data-color', color);
 
-      // Хаотичная анимация полёта
+      // Полёт
       const endPos = `${(Math.random() - 0.5) * 4} ${Math.random() * 1 - 0.5} ${(Math.random() - 0.5) * 4}`;
       obj.setAttribute('animation', `property: position; to: ${endPos}; dur: ${3000 + Math.random() * 2000}; loop: false; easing: easeInOutSine`);
-      obj.setAttribute('animation__rotate', 'property: rotation; to: 0 360 0; dur: 4000; loop: true; easing: linear');
+      obj.setAttribute('animation__rotate', 'property: rotation; to: 0 360 0; dur: 3000; loop: true; easing: linear');
 
-      // Клик-ловля
+      // Ловля
       obj.addEventListener('click', () => {
         if (gameActive) {
           scores[color]++;
@@ -141,8 +141,6 @@
       });
 
       document.getElementById('gameArea').appendChild(obj);
-
-      // Самоуничтожение
       setTimeout(() => obj.remove(), 6000);
     }
 
@@ -157,18 +155,11 @@
       gameActive = false;
       clearInterval(timerInterval);
       clearInterval(spawnInterval);
+      document.querySelectorAll('a-entity[gltf-model]').forEach(el => el.remove());
 
-      // Очистка объектов
-      document.querySelectorAll('a-sphere').forEach(obj => obj.remove());
-
-      // Итоги
       const total = scores.red + scores.green + scores.blue;
       finalScoreEl.textContent = `Очки: ${total}`;
-      finalDetailsEl.innerHTML = `
-        Красные: ${scores.red}/${maxScore}<br>
-        Зелёные: ${scores.green}/${maxScore}<br>
-        Синие: ${scores.blue}/${maxScore}
-      `;
+      finalDetailsEl.innerHTML = `Монеты: ${scores.red}<br>Звёзды: ${scores.green}<br>Кристаллы: ${scores.blue}`;
       results.style.display = 'flex';
     }
 
@@ -178,5 +169,4 @@
     }
   </script>
 </body>
-
 </html>
