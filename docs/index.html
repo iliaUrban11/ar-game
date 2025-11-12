@@ -8,7 +8,7 @@
   <style>
     body { margin: 0; font-family: Arial, sans-serif; overflow: hidden; }
     
-    /* Приветственный экран */
+    /* Главный экран */
     #welcome { 
       position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
@@ -16,11 +16,19 @@
       color: white; text-align: center; z-index: 1000; 
     }
     #welcome h1 { font-size: 2.5em; margin: 0 0 20px; }
-    #welcome p { font-size: 1.2em; max-width: 80%; margin: 0 0 30px; }
-    #startBtn { padding: 15px 30px; font-size: 1.5em; background: #ff6b6b; color: white; border: none; border-radius: 50px; cursor: pointer; transition: transform 0.2s; }
-    #startBtn:hover { transform: scale(1.05); }
+    #welcome p { font-size: 1.2em; max-width: 80%; margin: 0 0 20px; }
     
-    /* Игровой UI */
+    /* Полоса загрузки */
+    #progressContainer { width: 70%; margin: 20px 0; }
+    #progressBar { width: 100%; height: 20px; background: rgba(255,255,255,0.3); border-radius: 10px; overflow: hidden; }
+    #progressFill { height: 100%; width: 0%; background: #00b894; transition: width 0.3s; border-radius: 10px; }
+    #progressText { margin-top: 10px; font-size: 1.1em; }
+
+    /* Кнопка СТАРТ */
+    #startBtn { padding: 15px 30px; font-size: 1.5em; background: #ff6b6b; color: white; border: none; border-radius: 50px; cursor: pointer; transition: all 0.3s; opacity: 0.5; pointer-events: none; }
+    #startBtn.enabled { background: #ff6b6b; opacity: 1; pointer-events: auto; transform: scale(1.05); }
+
+    /* UI игры */
     #ui { position: fixed; top: 20px; left: 20px; right: 20px; z-index: 999; color: white; pointer-events: none; }
     #timer { font-size: 2em; text-align: center; margin-bottom: 10px; }
     .scale { margin: 10px 0; background: rgba(255,255,255,0.2); border-radius: 10px; height: 20px; overflow: hidden; }
@@ -28,8 +36,7 @@
     #red { background: #ff4757; }
     #green { background: #2ed573; }
     #blue { background: #3742fa; }
-    
-    /* Итоги */
+
     #results { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; flex-direction: column; justify-content: center; align-items: center; color: white; text-align: center; z-index: 1001; }
     #results h2 { font-size: 3em; margin: 0 0 20px; }
     #restartBtn { padding: 15px 30px; font-size: 1.2em; background: #00b894; color: white; border: none; border-radius: 50px; cursor: pointer; }
@@ -37,14 +44,22 @@
 </head>
 <body>
 
-  <!-- Приветственный экран -->
+  <!-- Главный экран с загрузкой -->
   <div id="welcome">
-    <h1>AR Лови Модели01</h1>
-    <p>Наведите камеру на маркер.<br>Ловите <strong>монеты</strong>, <strong>звёзды</strong>, <strong>кристаллы</strong>!<br>30 секунд — заполните шкалы!</p>
-    <button id="startBtn">СТАРТ</button>
+    <h1>AR Лови Модели!</h1>
+    <p>Загружаем 3D-модели... Подождите</p>
+    
+    <div id="progressContainer">
+      <div id="progressBar">
+        <div id="progressFill"></div>
+      </div>
+      <div id="progressText">0 / 3</div>
+    </div>
+
+    <button id="startBtn" disabled>СТАРТ</button>
   </div>
 
-  <!-- UI -->
+  <!-- UI игры -->
   <div id="ui">
     <div id="timer">30</div>
     <div>Монеты: <div class="scale"><div id="red-fill" class="scale-fill" style="width:0%"></div></div></div>
@@ -60,13 +75,13 @@
   </div>
 
   <!-- AR Сцена -->
-  <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
+  <a-scene id="arScene" embedded arjs="sourceType: webcam; debugUIEnabled: false;" style="display: none;">
     
-    <!-- Загрузка моделей (из той же папки main/) -->
-    <a-assets timeout="15000">
-      <a-asset-item id="red-model" src="docs/red.glb"></a-asset-item>
-      <a-asset-item id="green-model" src="green.glb"></a-asset-item>
-      <a-asset-item id="blue-model" src="blue.glb"></a-asset-item>
+    <!-- Загрузка моделей -->
+    <a-assets timeout="60000">
+      <a-asset-item id="red-model" src="red.glb" onload="assetLoaded('red')"></a-asset-item>
+      <a-asset-item id="green-model" src="green.glb" onload="assetLoaded('green')"></a-asset-item>
+      <a-asset-item id="blue-model" src="blue.glb" onload="assetLoaded('blue')"></a-asset-item>
     </a-assets>
 
     <a-marker preset="hiro">
@@ -76,15 +91,20 @@
   </a-scene>
 
   <script>
-    // Переменные
+    // === ПЕРЕМЕННЫЕ ===
     let gameActive = false;
     let timeLeft = 30;
     let scores = { red: 0, green: 0, blue: 0 };
     let timerInterval, spawnInterval;
     const maxScore = 20;
+    let loadedCount = 0;
+    const totalAssets = 3;
 
     // DOM
     const welcome = document.getElementById('welcome');
+    const progressFill = document.getElementById('progressFill');
+    const progressText = document.getElementById('progressText');
+    const startBtn = document.getElementById('startBtn');
     const ui = document.getElementById('ui');
     const timerEl = document.getElementById('timer');
     const fills = { red: document.getElementById('red-fill'), green: document.getElementById('green-fill'), blue: document.getElementById('blue-fill') };
@@ -92,12 +112,39 @@
     const finalScoreEl = document.getElementById('finalScore');
     const finalDetailsEl = document.getElementById('finalDetails');
 
-    // Кнопки
-    document.getElementById('startBtn').onclick = startGame;
-    document.getElementById('restartBtn').onclick = restartGame;
+    // === ОТСЛЕЖИВАНИЕ ЗАГРУЗКИ ===
+    window.assetLoaded = function(color) {
+      loadedCount++;
+      const percent = (loadedCount / totalAssets) * 100;
+      progressFill.style.width = percent + '%';
+      progressText.textContent = `${loadedCount} / ${totalAssets}`;
+
+      if (loadedCount === totalAssets) {
+        startBtn.classList.add('enabled');
+        startBtn.disabled = false;
+        startBtn.textContent = 'СТАРТ';
+        welcome.querySelector('p').textContent = 'Модели загружены! Нажмите СТАРТ';
+      }
+    };
+
+    // Если модели не загрузятся — используем сферы
+    setTimeout(() => {
+      if (loadedCount < totalAssets) {
+        console.warn('Не все модели загрузились — используем сферы');
+        startBtn.classList.add('enabled');
+        startBtn.disabled = false;
+        startBtn.textContent = 'СТАРТ (сферы)';
+      }
+    }, 15000);
+
+    // === СТАРТ ИГРЫ ===
+    startBtn.onclick = () => {
+      if (!startBtn.disabled) startGame();
+    };
 
     function startGame() {
       welcome.style.display = 'none';
+      document.getElementById('arScene').style.display = 'block';
       ui.style.pointerEvents = 'none';
       gameActive = true;
       timeLeft = 30;
@@ -113,25 +160,34 @@
       spawnInterval = setInterval(spawnObject, 1000);
     }
 
+    // === СПАВН ОБЪЕКТОВ ===
     function spawnObject() {
       if (!gameActive) return;
 
       const colors = ['red', 'green', 'blue'];
       const color = colors[Math.floor(Math.random() * 3)];
-      const modelId = color === 'red' ? '#red-model' : color === 'green' ? '#green-model' : '#blue-model';
 
-      const obj = document.createElement('a-entity');
-      obj.setAttribute('gltf-model', modelId);
-      obj.setAttribute('scale', '0.3 0.3 0.3');
+      let obj;
+      if (loadedCount === totalAssets) {
+        // Используем GLB
+        const modelId = color === 'red' ? '#red-model' : color === 'green' ? '#green-model' : '#blue-model';
+        obj = document.createElement('a-entity');
+        obj.setAttribute('gltf-model', modelId);
+        obj.setAttribute('scale', '0.5 0.5 0.5');
+      } else {
+        // Fallback: сферы
+        obj = document.createElement('a-sphere');
+        obj.setAttribute('radius', '0.12');
+        obj.setAttribute('color', color === 'red' ? '#ff4757' : color === 'green' ? '#2ed573' : '#3742fa');
+      }
+
       obj.setAttribute('position', `${(Math.random() - 0.5) * 4} ${1 + Math.random() * 2} ${(Math.random() - 0.5) * 4}`);
       obj.setAttribute('data-color', color);
 
-      // Полёт
       const endPos = `${(Math.random() - 0.5) * 4} ${Math.random() * 1 - 0.5} ${(Math.random() - 0.5) * 4}`;
       obj.setAttribute('animation', `property: position; to: ${endPos}; dur: ${3000 + Math.random() * 2000}; loop: false; easing: easeInOutSine`);
       obj.setAttribute('animation__rotate', 'property: rotation; to: 0 360 0; dur: 3000; loop: true; easing: linear');
 
-      // Ловля
       obj.addEventListener('click', () => {
         if (gameActive) {
           scores[color]++;
@@ -155,7 +211,7 @@
       gameActive = false;
       clearInterval(timerInterval);
       clearInterval(spawnInterval);
-      document.querySelectorAll('a-entity[gltf-model]').forEach(el => el.remove());
+      document.querySelectorAll('a-entity, a-sphere').forEach(el => el.remove());
 
       const total = scores.red + scores.green + scores.blue;
       finalScoreEl.textContent = `Очки: ${total}`;
@@ -163,10 +219,10 @@
       results.style.display = 'flex';
     }
 
-    function restartGame() {
+    document.getElementById('restartBtn').onclick = () => {
       results.style.display = 'none';
-      startGame();
-    }
+      location.reload(); // Перезагрузка для новой загрузки
+    };
   </script>
 </body>
 </html>
