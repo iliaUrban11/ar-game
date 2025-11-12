@@ -1,41 +1,63 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>3D Модели</title>
+  <title>AR: 3D на камере</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
   <style>
-    body { margin: 0; }
+    body { margin: 0; overflow: hidden; }
     #info {
-      position: fixed; top: 10px; left: 10px; color: white; background: #0008; padding: 10px; border-radius: 10px; font-family: Arial;
+      position: fixed; top: 10px; left: 10px; color: white; background: #0008; padding: 10px; border-radius: 10px; font-family: Arial; z-index: 100;
+    }
+    #enter-ar {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      padding: 15px 30px; background: #00b894; color: white; border: none; border-radius: 50px;
+      font-size: 1.2em; cursor: pointer; z-index: 100;
     }
   </style>
 </head>
 <body>
 
-  <div id="info">Если видишь модели — всё работает!</div>
+  <div id="info">Нажми "В AR" → смотри через камеру</div>
+  <button id="enter-ar" onclick="enterAR()">В AR</button>
 
-  <a-scene background="color: #222" renderer="antialias: true">
-    
+  <a-scene
+    vr-mode-ui="enabled: true"
+    embedded
+    arjs="sourceType: webcam; debugUIEnabled: false;"
+    renderer="colorManagement: true; antialias: true;"
+    background="color: transparent"
+  >
+
     <!-- Загрузка моделей -->
-    <a-assets>
+    <a-assets timeout="30000">
       <a-asset-item id="red" src="red.glb"></a-asset-item>
       <a-asset-item id="green" src="green.glb"></a-asset-item>
       <a-asset-item id="blue" src="blue.glb"></a-asset-item>
     </a-assets>
 
-    <!-- Красная модель -->
-    <a-entity gltf-model="#red" position="-1 0.5 -2" scale="0.5 0.5 0.5"></a-entity>
-
-    <!-- Зелёная модель -->
-    <a-entity gltf-model="#green" position="0 0.5 -2" scale="0.5 0.5 0.5"></a-entity>
-
-    <!-- Синяя модель -->
-    <a-entity gltf-model="#blue" position="1 0.5 -2" scale="0.5 0.5 0.5"></a-entity>
+    <!-- Модели (видны сразу) -->
+    <a-entity gltf-model="#red" position="-0.8 0.5 -1.5" scale="0.5 0.5 0.5"></a-entity>
+    <a-entity gltf-model="#green" position="0 0.5 -1.5" scale="0.5 0.5 0.5"></a-entity>
+    <a-entity gltf-model="#blue" position="0.8 0.5 -1.5" scale="0.5 0.5 0.5"></a-entity>
 
     <!-- Камера -->
-    <a-entity camera position="0 1.6 0" look-controls wasd-controls></a-entity>
+    <a-entity camera></a-entity>
 
   </a-scene>
+
+  <script>
+    function enterAR() {
+      const scene = document.querySelector('a-scene');
+      if (scene.hasLoaded) {
+        scene.enterAR();
+      } else {
+        scene.addEventListener('loaded', () => scene.enterAR());
+      }
+      document.getElementById('enter-ar').style.display = 'none';
+      document.getElementById('info').textContent = 'Смотри в камеру! Модели в реальном мире';
+    }
+  </script>
 
 </body>
 </html>
