@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>AR Модели!</title>
+  <title>AR Лови Модели!</title>
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
   <script src="https://jeromeetienne.github.io/AR.js/aframe/build/aframe-ar.js"></script>
   <style>
@@ -39,7 +39,7 @@
 
   <!-- Приветственный экран -->
   <div id="welcome">
-    <h1>AR Лови Модели4</h1>
+    <h1>AR Лови Модели01</h1>
     <p>Наведите камеру на маркер.<br>Ловите <strong>монеты</strong>, <strong>звёзды</strong>, <strong>кристаллы</strong>!<br>30 секунд — заполните шкалы!</p>
     <button id="startBtn">СТАРТ</button>
   </div>
@@ -64,7 +64,7 @@
     
     <!-- Загрузка моделей (из той же папки main/) -->
     <a-assets timeout="15000">
-      <a-asset-item id="red-model" src="red.glb"></a-asset-item>
+      <a-asset-item id="red-model" src="docs/red.glb"></a-asset-item>
       <a-asset-item id="green-model" src="green.glb"></a-asset-item>
       <a-asset-item id="blue-model" src="blue.glb"></a-asset-item>
     </a-assets>
@@ -121,11 +121,8 @@
       const modelId = color === 'red' ? '#red-model' : color === 'green' ? '#green-model' : '#blue-model';
 
       const obj = document.createElement('a-entity');
-      
-    / obj.setAttribute('gltf-model', modelId);
-
-      
-      obj.setAttribute('scale', '0.8 0.8 0.8');
+      obj.setAttribute('gltf-model', modelId);
+      obj.setAttribute('scale', '0.3 0.3 0.3');
       obj.setAttribute('position', `${(Math.random() - 0.5) * 4} ${1 + Math.random() * 2} ${(Math.random() - 0.5) * 4}`);
       obj.setAttribute('data-color', color);
 
@@ -173,5 +170,3 @@
   </script>
 </body>
 </html>
-
-
