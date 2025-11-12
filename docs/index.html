@@ -121,7 +121,15 @@
       const modelId = color === 'red' ? '#red-model' : color === 'green' ? '#green-model' : '#blue-model';
 
       const obj = document.createElement('a-entity');
-      obj.setAttribute('gltf-model', modelId);
+      
+    //  obj.setAttribute('gltf-model', modelId);
+
+      // ДОБАВЬ ЭТУ (сферы вместо моделей):
+    const obj = document.createElement('a-sphere');
+    obj.setAttribute('radius', '0.1');
+    obj.setAttribute('color', color === 'red' ? '#ff4757' : color === 'green' ? '#2ed573' : '#3742fa');
+
+      
       obj.setAttribute('scale', '0.3 0.3 0.3');
       obj.setAttribute('position', `${(Math.random() - 0.5) * 4} ${1 + Math.random() * 2} ${(Math.random() - 0.5) * 4}`);
       obj.setAttribute('data-color', color);
