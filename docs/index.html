@@ -1,202 +1,41 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8">
-  <title>AR Лови03</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  
-  <!-- A-Frame 1.6.0 (требуется для AR.js 3.4.7) -->
+  <title>3D Модели</title>
   <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
-  
-  <!-- AR.js 3.4.7 — Marker Based (официально!) -->
-  <script src="https://raw.githack.com/AR-js-org/AR.js/3.4.7/aframe/build/aframe-ar.js"></script>
-
   <style>
-    body { margin: 0; overflow: hidden; font-family: Arial; }
-    
-    /* Экран загрузки */
-    #welcome {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      display: flex; flex-direction: column; justify-content: center; align-items: center;
-      color: white; text-align: center; z-index: 1000;
+    body { margin: 0; }
+    #info {
+      position: fixed; top: 10px; left: 10px; color: white; background: #0008; padding: 10px; border-radius: 10px; font-family: Arial;
     }
-    #progressBar { width: 70%; height: 20px; background: #fff3; border-radius: 10px; overflow: hidden; margin: 20px 0; }
-    #progressFill { height: 100%; width: 0%; background: #00b894; transition: width 0.3s; }
-    #startBtn { padding: 15px 30px; font-size: 1.5em; background: #ff6b6b; color: white; border: none; border-radius: 50px; cursor: pointer; opacity: 0.5; pointer-events: none; }
-    #startBtn.ready { opacity: 1; pointer-events: auto; }
-
-    /* UI */
-    #ui { position: fixed; top: 10px; left: 10px; right: 10px; z-index: 999; color: white; }
-    .bar { height: 18px; background: #fff3; border-radius: 9px; overflow: hidden; margin: 5px 0; }
-    .fill { height: 100%; width: 0%; transition: width 0.3s; }
-    #red .fill { background: #ff4757; }
-    #green .fill { background: #2ed573; }
-    #blue .fill { background: #3742fa; }
-
-    /* Результат */
-    #results {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: #000c; display: none; flex-direction: column; justify-content: center; align-items: center;
-      color: white; text-align: center; z-index: 1001;
-    }
-    #restartBtn { padding: 15px 30px; background: #00b894; color: white; border: none; border-radius: 50px; cursor: pointer; }
   </style>
 </head>
 <body>
 
-  <!-- Экран загрузки -->
-  <div id="welcome">
-    <h1>AR Лови03</h1>
-    <p>Загружаем модели...</p>
-    <div id="progressBar"><div id="progressFill"></div></div>
-    <div id="progressText">0 / 3</div>
-    <button id="startBtn">СТАРТ</button>
-  </div>
+  <div id="info">Если видишь модели — всё работает!</div>
 
-  <!-- UI -->
-  <div id="ui">
-    <div style="text-align:center; font-size:1.5em; margin-bottom:10px;" id="timer">30</div>
-    <div>Монеты: <div class="bar" id="red"><div class="fill"></div></div></div>
-    <div>Звёзды: <div class="bar" id="green"><div class="fill"></div></div></div>
-    <div>Кристаллы: <div class="bar" id="blue"><div class="fill"></div></div></div>
-  </div>
-
-  <!-- Результат -->
-  <div id="results">
-    <h2 id="finalScore">Очки: 0</h2>
-    <p id="finalDetails"></p>
-    <button id="restartBtn">ЗАНОВО</button>
-  </div>
-
-  <!-- AR СЦЕНА -->
-  <a-scene
-    embedded
-    arjs="sourceType: webcam; debugUIEnabled: false;"
-    renderer="antialias: true;"
-    vr-mode-ui="enabled: false"
-  >
+  <a-scene background="color: #222" renderer="antialias: true">
+    
     <!-- Загрузка моделей -->
-    <a-assets timeout="30000">
-      <a-asset-item id="red-model" src="red.glb" onload="loaded()"></a-asset-item>
-      <a-asset-item id="green-model" src="green.glb" onload="loaded()"></a-asset-item>
-      <a-asset-item id="blue-model" src="blue.glb" onload="loaded()"></a-asset-item>
+    <a-assets>
+      <a-asset-item id="red" src="red.glb"></a-asset-item>
+      <a-asset-item id="green" src="green.glb"></a-asset-item>
+      <a-asset-item id="blue" src="blue.glb"></a-asset-item>
     </a-assets>
 
-    <!-- Маркер Hiro -->
-    <a-marker preset="hiro">
-      <a-entity id="gameArea"></a-entity>
-    </a-marker>
+    <!-- Красная модель -->
+    <a-entity gltf-model="#red" position="-1 0.5 -2" scale="0.5 0.5 0.5"></a-entity>
+
+    <!-- Зелёная модель -->
+    <a-entity gltf-model="#green" position="0 0.5 -2" scale="0.5 0.5 0.5"></a-entity>
+
+    <!-- Синяя модель -->
+    <a-entity gltf-model="#blue" position="1 0.5 -2" scale="0.5 0.5 0.5"></a-entity>
 
     <!-- Камера -->
-    <a-entity camera></a-entity>
+    <a-entity camera position="0 1.6 0" look-controls wasd-controls></a-entity>
+
   </a-scene>
 
-  <script>
-    let loadedCount = 0, total = 3, gameActive = false, timeLeft = 30;
-    let scores = { red: 0, green: 0, blue: 0 };
-    const progressFill = document.getElementById('progressFill');
-    const progressText = document.getElementById('progressText');
-    const startBtn = document.getElementById('startBtn');
-    const timerEl = document.getElementById('timer');
-    const bars = {
-      red: document.querySelector('#red .fill'),
-      green: document.querySelector('#green .fill'),
-      blue: document.querySelector('#blue .fill')
-    };
-
-    // Загрузка модели
-    window.loaded = () => {
-      loadedCount++;
-      progressFill.style.width = (loadedCount / total * 100) + '%';
-      progressText.textContent = loadedCount + ' / 3';
-      if (loadedCount === total) ready();
-    };
-
-    // Fallback: сферы
-    setTimeout(() => {
-      if (loadedCount < total) {
-        console.warn('Модели не загрузились — используем сферы');
-        ready();
-      }
-    }, 15000);
-
-    function ready() {
-      startBtn.classList.add('ready');
-      startBtn.textContent = loadedCount === total ? 'СТАРТ' : 'СТАРТ (сферы)';
-      startBtn.onclick = startGame;
-      document.querySelector('#welcome p').textContent = 'Готово!';
-    }
-
-    function startGame() {
-      document.getElementById('welcome').style.display = 'none';
-      gameActive = true;
-
-      // Таймер
-      const timer = setInterval(() => {
-        if (--timeLeft <= 0) endGame();
-        timerEl.textContent = timeLeft;
-      }, 1000);
-
-      // Спавн
-      const spawn = setInterval(spawnObject, 1200);
-      window.endGame = () => { gameActive = false; clearInterval(timer); clearInterval(spawn); };
-    }
-
-    function spawnObject() {
-      if (!gameActive) return;
-      const colors = ['red', 'green', 'blue'];
-      const color = colors[Math.floor(Math.random() * 3)];
-      const useModels = loadedCount === total;
-
-      const obj = document.createElement(useModels ? 'a-entity' : 'a-sphere');
-      
-      if (useModels) {
-        obj.setAttribute('gltf-model', `#${color}-model`);
-        obj.setAttribute('scale', '0.4 0.4 0.4');
-      } else {
-        obj.setAttribute('radius', '0.15');
-        obj.setAttribute('color', color === 'red' ? '#ff4757' : color === 'green' ? '#2ed573' : '#3742fa');
-      }
-
-      // Позиция: ВПЕРЕДИ маркера
-      obj.setAttribute('position', `${rand(-0.8, 0.8)} 0.5 ${rand(-0.8, 0.8)}`);
-      obj.setAttribute('data-color', color);
-
-      // Анимация
-      obj.setAttribute('animation', `property: position; to: ${rand(-0.8, 0.8)} ${rand(0.1, 0.4)} ${rand(-0.8, 0.8)}; dur: 4000; easing: easeInOutSine`);
-      obj.setAttribute('animation__rot', 'property: rotation; to: 0 360 0; dur: 3000; loop: true');
-
-      // Ловля
-      obj.addEventListener('click', () => {
-        if (gameActive && obj.parentNode) {
-          scores[color]++;
-          obj.remove();
-          updateUI();
-        }
-      });
-
-      document.getElementById('gameArea').appendChild(obj);
-      setTimeout(() => obj && obj.parentNode && obj.remove(), 5000);
-    }
-
-    function rand(min, max) { return Math.random() * (max - min) + min; }
-    function updateUI() {
-      Object.keys(scores).forEach(c => {
-        bars[c].style.width = Math.min(scores[c] * 5, 100) + '%';
-      });
-    }
-
-    function endGame() {
-      if (!gameActive) return;
-      gameActive = false;
-      const total = scores.red + scores.green + scores.blue;
-      document.getElementById('finalScore').textContent = `Очки: ${total}`;
-      document.getElementById('finalDetails').innerHTML = `Монеты: ${scores.red}<br>Звёзды: ${scores.green}<br>Кристаллы: ${scores.blue}`;
-      document.getElementById('results').style.display = 'flex';
-    }
-
-    document.getElementById('restartBtn').onclick = () => location.reload();
-  </script>
 </body>
 </html>
