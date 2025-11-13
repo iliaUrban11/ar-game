@@ -9,7 +9,7 @@
   <script src="https://raw.githack.com/AR-js-org/AR.js/3.4.7/aframe/build/aframe-ar-nft.js"></script>
 
   <style>
-    body { margin: 0; overflow: hidden; font-family: Arial; }
+    body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
     #startBtn {
       position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
       padding: 20px 40px; background: #00b894; color: white; font-size: 1.5em;
@@ -37,7 +37,7 @@
 </head>
 <body>
 
-  <button id="startBtn" onclick="startAR()">ЗАПУСТИТЬ AR</button>
+  <button id="startBtn" onclick="startAR()">ЗАПУСТИТЬ AR1</button>
   <div id="ui">Касайся моделей — они исчезнут!</div>
 
   <!-- ШКАЛЫ -->
@@ -54,6 +54,7 @@
     vr-mode-ui="enabled: false"
     device-orientation-permission-ui="enabled: false"
     style="display: none;"
+    raycaster="objects: .clickable"
   >
 
     <a-assets timeout="30000">
@@ -62,30 +63,24 @@
       <a-asset-item id="blue" src="blue.glb"></a-asset-item>
     </a-assets>
 
-    <!-- КУРСОР ДЛЯ КЛИКА -->
-    <a-camera>
-      <a-cursor
-        position="0 0 -1"
-        geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
-        material="color: white; shader: flat"
-        animation__click="property: scale; startEvents: click; from: 0.1 0.1 0.1; to: 1 1 1; dur: 150"
-      ></a-cursor>
-    </a-camera>
-
     <a-entity id="models"></a-entity>
+
+    <!-- КАМЕРА БЕЗ КУРСОРА -->
+    <a-entity camera></a-entity>
 
   </a-scene>
 
   <script>
     let scores = { red: 0, green: 0, blue: 0 };
     let existingPositions = [];
+    let sceneEl, modelsGroup;
 
     function startAR() {
       const startBtn = document.getElementById('startBtn');
       const ui = document.getElementById('ui');
       const progress = document.getElementById('progress');
-      const sceneEl = document.querySelector('a-scene');
-      const modelsGroup = document.getElementById('models');
+      sceneEl = document.querySelector('a-scene');
+      modelsGroup = document.getElementById('models');
 
       startBtn.style.display = 'none';
       ui.style.display = 'block';
@@ -94,22 +89,62 @@
       existingPositions = [];
 
       if (sceneEl.hasLoaded) {
-        spawnAllModels();
+        initAR();
       } else {
-        sceneEl.addEventListener('loaded', spawnAllModels);
+        sceneEl.addEventListener('loaded', initAR);
       }
+    }
 
-      function spawnAllModels() {
-        const arSystem = sceneEl.components.arjs;
-        if (arSystem) arSystem._startSession();
+    function initAR() {
+      const arSystem = sceneEl.components.arjs;
+      if (arSystem) arSystem._startSession();
 
-        const colors = ['red', 'green', 'blue'];
-        colors.forEach(color => {
-          for (let i = 0; i < 10; i++) {
-            spawnModel(color);
-          }
-        });
+      // Прямое касание по экрану
+      sceneEl.canvas.addEventListener('touchstart', handleTouch);
+      sceneEl.canvas.addEventListener('mousedown', handleTouch); // для ПК
+
+      spawnAllModels();
+    }
+
+    function handleTouch(event) {
+      event.preventDefault();
+      const touch = event.touches ? event.touches[0] : event;
+      const rect = sceneEl.canvas.getBoundingClientRect();
+      const x = touch.clientX - rect.left;
+      const y = touch.clientY - rect.top;
+
+      const raycaster = new THREE.Raycaster();
+      const camera = sceneEl.camera;
+      const mouse = new THREE.Vector2(
+        (x / rect.width) * 2 - 1,
+        -(y / rect.height) * 2 + 1
+      );
+
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(modelsGroup.object3D.children, true);
+
+      if (intersects.length > 0) {
+        const obj = intersects[0].object;
+        const entity = obj.parent;
+        while (entity && !entity.hasAttribute('data-color')) {
+          entity = entity.parent;
+        }
+        if (entity && entity.hasAttribute('data-color')) {
+          const color = entity.getAttribute('data-color');
+          scores[color]++;
+          entity.remove();
+          updateScales();
+        }
       }
+    }
+
+    function spawnAllModels() {
+      const colors = ['red', 'green', 'blue'];
+      colors.forEach(color => {
+        for (let i = 0; i < 10; i++) {
+          spawnModel(color);
+        }
+      });
     }
 
     function spawnModel(color) {
@@ -149,15 +184,6 @@
         loop: true;
         easing: easeInOutSine
       `);
-
-      // КЛИК ЧЕРЕЗ CURSOR
-      obj.addEventListener('click', () => {
-        if (obj.parentNode) {
-          scores[color]++;
-          obj.remove();
-          updateScales();
-        }
-      });
 
       modelsGroup.appendChild(obj);
       existingPositions.push({x, y: baseY, z});
