@@ -2,180 +2,73 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>AR Catch Game - 3 Шкалы</title>
-  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-  <script src="https://jeromeetienne.github.io/AR.js/aframe/build/aframe-ar.js"></script>
+  <title>AR Лови Модели!</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  
+  <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+  <script src="https://raw.githack.com/AR-js-org/AR.js/3.4.7/aframe/build/aframe-ar-nft.js"></script>
+
   <style>
-    body { margin: 0; font-family: Arial, sans-serif; overflow: hidden; }
-    
-    /* Приветственный экран */
-    #welcome { 
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-      display: flex; flex-direction: column; justify-content: center; align-items: center; 
-      color: white; text-align: center; z-index: 1000; 
+    body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
+    #startBtn {
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      padding: 20px 40px; background: #00b894; color: white; font-size: 1.5em;
+      border: none; border-radius: 50px; cursor: pointer; z-index: 1000;
     }
-    #welcome h1 { font-size: 2.5em; margin: 0 0 20px; }
-    #welcome p { font-size: 1.2em; max-width: 80%; margin: 0 0 30px; }
-    #startBtn { padding: 15px 30px; font-size: 1.5em; background: #ff6b6b; color: white; border: none; border-radius: 50px; cursor: pointer; transition: transform 0.2s; }
-    #startBtn:hover { transform: scale(1.05); }
-    
-    /* Игровой UI (оверлей) */
-    #ui { position: fixed; top: 20px; left: 20px; right: 20px; z-index: 999; color: white; pointer-events: none; }
-    #timer { font-size: 2em; text-align: center; margin-bottom: 10px; }
-    .scale { margin: 10px 0; background: rgba(255,255,255,0.2); border-radius: 10px; height: 20px; overflow: hidden; }
-    .scale-fill { height: 100%; transition: width 0.3s; border-radius: 10px; }
-    #red { background: #ff4757; }
-    #green { background: #2ed573; }
-    #blue { background: #3742fa; }
-    #results { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; flex-direction: column; justify-content: center; align-items: center; color: white; text-align: center; z-index: 1001; }
-    #results h2 { font-size: 3em; margin: 0 0 20px; }
-    #restartBtn { padding: 15px 30px; font-size: 1.2em; background: #00b894; color: white; border: none; border-radius: 50px; cursor: pointer; }
-    
-    /* Скрытие A-Frame на старте */
-    #arScene { display: none; }
+    #ui {
+      position: fixed; top: 10px; left: 10px; right: 10px; color: white;
+      background: rgba(0,0,0,0.5); padding: 10px; border-radius: 10px;
+      text-align: center; font-size: 1.1em; z-index: 999; display: none;
+    }
+    #progress {
+      position: fixed; bottom: 20px; left: 20px; right: 20px;
+      display: flex; gap: 10px; z-index: 999; display: none;
+    }
+    .bar {
+      flex: 1; height: 25px; background: rgba(255,255,255,0.3); 
+      border-radius: 12px; overflow: hidden; position: relative;
+    }
+    .fill { height: 100%; width: 0%; transition: width 0.3s; }
+    .label { position: absolute; top: 4px; left: 8px; font-size: 12px; color: white; font-weight: bold; }
+    #red-fill { background: #ff4757; }
+    #green-fill { background: #2ed573; }
+    #blue-fill { background: #3742fa; }
   </style>
 </head>
 <body>
-  <!-- Приветственный экран -->
-  <div id="welcome">
-    <h1>🎮 AR Лови Шкалы!</h1>
-    <p>Наведите камеру на маркер. Ловите летающие сферы касанием!<br>Красные → красная шкала | Зелёные → зелёная | Синие → синяя<br>30 секунд — максимум заполнения!</p>
-    <button id="startBtn">🚀 СТАРТ</button>
+
+  <button id="startBtn">ЗАПУСТИТЬ AR232</button>
+  <div id="ui">Касайся моделей пальцем — они исчезнут!</div>
+
+  <div id="progress">
+    <div class="bar"><div class="label">RED</div><div id="red-fill" class="fill"></div></div>
+    <div class="bar"><div class="label">GREEN</div><div id="green-fill" class="fill"></div></div>
+    <div class="bar"><div class="label">BLUE</div><div id="blue-fill" class="fill"></div></div>
   </div>
 
-  <!-- Игровой UI -->
-  <div id="ui">
-    <div id="timer">30</div>
-    <div>Красные: <div class="scale"><div id="red-fill" class="scale-fill" style="width:0%"></div></div></div>
-    <div>Зелёные: <div class="scale"><div id="green-fill" class="scale-fill" style="width:0%"></div></div></div>
-    <div>Синие: <div class="scale"><div id="blue-fill" class="scale-fill" style="width:0%"></div></div></div>
-  </div>
+  <a-scene
+    embedded
+    arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;"
+    renderer="antialias: true;"
+    vr-mode-ui="enabled: false"
+    device-orientation-permission-ui="enabled: false"
+    style="display: none;"
+    raycaster="objects: .clickable"
+  >
 
-  <!-- Экран итогов -->
-  <div id="results">
-    <h2 id="finalScore">ИТОГИ</h2>
-    <p id="finalDetails"></p>
-    <button id="restartBtn">ИГРАТЬ ЗАНОВО</button>
-  </div>
+    <a-assets timeout="30000">
+      <a-asset-item id="red" src="red.glb"></a-asset-item>
+      <a-asset-item id="green" src="green.glb"></a-asset-item>
+      <a-asset-item id="blue" src="blue.glb"></a-asset-item>
+    </a-assets>
 
-  <!-- AR Сцена -->
-  <a-scene id="arScene" embedded arjs="sourceType: webcam; debugUIEnabled: false;">
-    <a-marker preset="hiro">
-      <a-entity id="gameArea"></a-entity>
-    </a-marker>
-    <a-entity camera look-controls="enabled: false"></a-entity>
+    <a-entity camera look-controls="enabled: true"></a-entity>
+    <a-entity id="models"></a-entity>
+
   </a-scene>
 
-  <script>
-    // Переменные игры
-    let gameActive = false;
-    let timeLeft = 30;
-    let scores = { red: 0, green: 0, blue: 0 };
-    let timerInterval;
-    let spawnInterval;
-    const maxScore = 20; // Полная шкала на 20 ловлях
+  <!-- ВНЕШНИЙ СКРИПТ -->
+  <script src="script.js"></script>
 
-    // DOM элементы
-    const welcome = document.getElementById('welcome');
-    const arScene = document.getElementById('arScene');
-    const ui = document.getElementById('ui');
-    const timerEl = document.getElementById('timer');
-    const fills = {
-      red: document.getElementById('red-fill'),
-      green: document.getElementById('green-fill'),
-      blue: document.getElementById('blue-fill')
-    };
-    const results = document.getElementById('results');
-    const finalScoreEl = document.getElementById('finalScore');
-    const finalDetailsEl = document.getElementById('finalDetails');
-
-    // Старт игры
-    document.getElementById('startBtn').addEventListener('click', startGame);
-    document.getElementById('restartBtn').addEventListener('click', restartGame);
-
-    function startGame() {
-      welcome.style.display = 'none';
-      arScene.style.display = 'block';
-      ui.style.pointerEvents = 'none';
-      gameActive = true;
-      timeLeft = 30;
-      scores = { red: 0, green: 0, blue: 0 };
-      updateUI();
-
-      // Таймер
-      timerInterval = setInterval(() => {
-        timeLeft--;
-        timerEl.textContent = timeLeft;
-        updateUI();
-        if (timeLeft <= 0) endGame();
-      }, 1000);
-
-      // Спавн объектов
-      spawnInterval = setInterval(spawnObject, 800 + Math.random() * 800);
-    }
-
-    function spawnObject() {
-      if (!gameActive) return;
-
-      const colors = ['red', 'green', 'blue'];
-      const color = colors[Math.floor(Math.random() * 3)];
-      const obj = document.createElement('a-sphere');
-      obj.setAttribute('radius', '0.08');
-      obj.setAttribute('color', color === 'red' ? '#ff4757' : color === 'green' ? '#2ed573' : '#3742fa');
-      obj.setAttribute('position', `${(Math.random() - 0.5) * 4} ${1 + Math.random() * 2} ${(Math.random() - 0.5) * 4}`);
-      obj.setAttribute('data-color', color);
-
-      // Хаотичная анимация полёта
-      const endPos = `${(Math.random() - 0.5) * 4} ${Math.random() * 1 - 0.5} ${(Math.random() - 0.5) * 4}`;
-      obj.setAttribute('animation', `property: position; to: ${endPos}; dur: ${3000 + Math.random() * 2000}; loop: false; easing: easeInOutSine`);
-      obj.setAttribute('animation__rotate', 'property: rotation; to: 0 360 0; dur: 4000; loop: true; easing: linear');
-
-      // Клик-ловля
-      obj.addEventListener('click', () => {
-        if (gameActive) {
-          scores[color]++;
-          obj.remove();
-          updateUI();
-        }
-      });
-
-      document.getElementById('gameArea').appendChild(obj);
-
-      // Самоуничтожение
-      setTimeout(() => obj.remove(), 6000);
-    }
-
-    function updateUI() {
-      Object.keys(scores).forEach(c => {
-        const percent = Math.min((scores[c] / maxScore) * 100, 100);
-        fills[c].style.width = percent + '%';
-      });
-    }
-
-    function endGame() {
-      gameActive = false;
-      clearInterval(timerInterval);
-      clearInterval(spawnInterval);
-
-      // Очистка объектов
-      document.querySelectorAll('a-sphere').forEach(obj => obj.remove());
-
-      // Итоги
-      const total = scores.red + scores.green + scores.blue;
-      finalScoreEl.textContent = `Очки: ${total}`;
-      finalDetailsEl.innerHTML = `
-        Красные: ${scores.red}/${maxScore}<br>
-        Зелёные: ${scores.green}/${maxScore}<br>
-        Синие: ${scores.blue}/${maxScore}
-      `;
-      results.style.display = 'flex';
-    }
-
-    function restartGame() {
-      results.style.display = 'none';
-      startGame();
-    }
-  </script>
 </body>
 </html>
