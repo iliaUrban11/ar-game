@@ -37,7 +37,7 @@
 </head>
 <body>
 
-  <button id="startBtn" onclick="startAR()">ЗАПУСТИТЬ AR1</button>
+  <button id="startBtn" onclick="startAR()">ЗАПУСТИТЬ AR2</button>
   <div id="ui">Касайся моделей — они исчезнут!</div>
 
   <!-- ШКАЛЫ -->
@@ -54,7 +54,6 @@
     vr-mode-ui="enabled: false"
     device-orientation-permission-ui="enabled: false"
     style="display: none;"
-    raycaster="objects: .clickable"
   >
 
     <a-assets timeout="30000">
@@ -63,10 +62,19 @@
       <a-asset-item id="blue" src="blue.glb"></a-asset-item>
     </a-assets>
 
-    <a-entity id="models"></a-entity>
+    <!-- КАМЕРА + LOOK-CONTROLS + КУРСОР -->
+    <a-camera look-controls="enabled: true">
+      <a-cursor
+        id="cursor"
+        position="0 0 -1"
+        geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
+        material="color: white; shader: flat; opacity: 0.7"
+        animation__click="property: scale; startEvents: click; from: 0.1 0.1 0.1; to: 1 1 1; dur: 150"
+        animation__fusing="property: scale; startEvents: fusing; from: 1 1 1; to: 0.1 0.1 0.1; dur: 150"
+      ></a-cursor>
+    </a-camera>
 
-    <!-- КАМЕРА БЕЗ КУРСОРА -->
-    <a-entity camera></a-entity>
+    <a-entity id="models"></a-entity>
 
   </a-scene>
 
@@ -99,33 +107,12 @@
       const arSystem = sceneEl.components.arjs;
       if (arSystem) arSystem._startSession();
 
-      // Прямое касание по экрану
-      sceneEl.canvas.addEventListener('touchstart', handleTouch);
-      sceneEl.canvas.addEventListener('mousedown', handleTouch); // для ПК
+      // КЛИК ПО МОДЕЛИ
+      sceneEl.addEventListener('click', function (evt) {
+        const clicked = evt.detail.intersection?.object?.parent;
+        if (!clicked) return;
 
-      spawnAllModels();
-    }
-
-    function handleTouch(event) {
-      event.preventDefault();
-      const touch = event.touches ? event.touches[0] : event;
-      const rect = sceneEl.canvas.getBoundingClientRect();
-      const x = touch.clientX - rect.left;
-      const y = touch.clientY - rect.top;
-
-      const raycaster = new THREE.Raycaster();
-      const camera = sceneEl.camera;
-      const mouse = new THREE.Vector2(
-        (x / rect.width) * 2 - 1,
-        -(y / rect.height) * 2 + 1
-      );
-
-      raycaster.setFromCamera(mouse, camera);
-      const intersects = raycaster.intersectObjects(modelsGroup.object3D.children, true);
-
-      if (intersects.length > 0) {
-        const obj = intersects[0].object;
-        const entity = obj.parent;
+        let entity = clicked;
         while (entity && !entity.hasAttribute('data-color')) {
           entity = entity.parent;
         }
@@ -135,7 +122,9 @@
           entity.remove();
           updateScales();
         }
-      }
+      });
+
+      spawnAllModels();
     }
 
     function spawnAllModels() {
@@ -155,54 +144,4 @@
       obj.classList.add('clickable');
 
       // РАЗМЕР: 0.1 — 0.6 м
-      const size = 0.1 + Math.random() * 0.5;
-      obj.setAttribute('scale', `${size} ${size} ${size}`);
-
-      // РАССТОЯНИЕ: 1 — 10 м
-      const distance = 1 + Math.random() * 9;
-
-      // УГОЛ: -90° → +90° (180°)
-      const angle = (Math.random() * 180 - 90) * Math.PI / 180;
-
-      let x, z, baseY;
-      let attempts = 0;
-      do {
-        x = Math.sin(angle) * distance;
-        z = -Math.cos(angle) * distance;
-        baseY = 0.2 + Math.random() * 1.6;
-        attempts++;
-      } while (hasOverlap(x, baseY, z) && attempts < 50);
-
-      obj.setAttribute('position', `${x} ${baseY} ${z}`);
-
-      // КАЧАНИЕ
-      obj.setAttribute('animation', `
-        property: position;
-        to: ${x} ${baseY + 0.4} ${z};
-        dur: ${2000 + Math.random() * 3000};
-        dir: alternate;
-        loop: true;
-        easing: easeInOutSine
-      `);
-
-      modelsGroup.appendChild(obj);
-      existingPositions.push({x, y: baseY, z});
-    }
-
-    function hasOverlap(x, y, z) {
-      for (let pos of existingPositions) {
-        const dist = Math.sqrt((x - pos.x)**2 + (y - pos.y)**2 + (z - pos.z)**2);
-        if (dist < 0.8) return true;
-      }
-      return false;
-    }
-
-    function updateScales() {
-      document.getElementById('red-fill').style.width = Math.min(scores.red * 10, 100) + '%';
-      document.getElementById('green-fill').style.width = Math.min(scores.green * 10, 100) + '%';
-      document.getElementById('blue-fill').style.width = Math.min(scores.blue * 10, 100) + '%';
-    }
-  </script>
-
-</body>
-</html>
+      const size = 0.1
