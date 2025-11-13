@@ -5,6 +5,7 @@
   <title>AR Лови Модели!</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   
+  <!-- A-Frame + AR.js NFT -->
   <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
   <script src="https://raw.githack.com/AR-js-org/AR.js/3.4.7/aframe/build/aframe-ar-nft.js"></script>
 
@@ -37,7 +38,8 @@
 </head>
 <body>
 
-  <button id="startBtn" onclick="startAR()">ЗАПУСТИТЬ AR2</button>
+  <!-- КНОПКА БЕЗ onclick -->
+  <button id="startBtn">ЗАПУСТИТЬ AR</button>
   <div id="ui">Касайся моделей — они исчезнут!</div>
 
   <!-- ШКАЛЫ -->
@@ -47,6 +49,7 @@
     <div class="bar"><div class="label">BLUE</div><div id="blue-fill" class="fill"></div></div>
   </div>
 
+  <!-- AR СЦЕНА -->
   <a-scene
     embedded
     arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;"
@@ -65,12 +68,9 @@
     <!-- КАМЕРА + LOOK-CONTROLS + КУРСОР -->
     <a-camera look-controls="enabled: true">
       <a-cursor
-        id="cursor"
         position="0 0 -1"
         geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
-        material="color: white; shader: flat; opacity: 0.7"
-        animation__click="property: scale; startEvents: click; from: 0.1 0.1 0.1; to: 1 1 1; dur: 150"
-        animation__fusing="property: scale; startEvents: fusing; from: 1 1 1; to: 0.1 0.1 0.1; dur: 150"
+        material="color: white; shader: flat; opacity: 0.5"
       ></a-cursor>
     </a-camera>
 
@@ -78,13 +78,20 @@
 
   </a-scene>
 
+  <!-- СКРИПТ ПОДКЛЮЧАЕТСЯ ПОСЛЕ -->
   <script>
+    // --- ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ---
     let scores = { red: 0, green: 0, blue: 0 };
     let existingPositions = [];
-    let sceneEl, modelsGroup;
+    let sceneEl, modelsGroup, startBtn;
+
+    // --- ЗАПУСК AR ---
+    document.addEventListener('DOMContentLoaded', () => {
+      startBtn = document.getElementById('startBtn');
+      startBtn.addEventListener('click', startAR); // БЕЗ onclick!
+    });
 
     function startAR() {
-      const startBtn = document.getElementById('startBtn');
       const ui = document.getElementById('ui');
       const progress = document.getElementById('progress');
       sceneEl = document.querySelector('a-scene');
@@ -108,11 +115,11 @@
       if (arSystem) arSystem._startSession();
 
       // КЛИК ПО МОДЕЛИ
-      sceneEl.addEventListener('click', function (evt) {
-        const clicked = evt.detail.intersection?.object?.parent;
-        if (!clicked) return;
+      sceneEl.addEventListener('click', (evt) => {
+        const intersection = evt.detail.intersection;
+        if (!intersection) return;
 
-        let entity = clicked;
+        let entity = intersection.object.parent;
         while (entity && !entity.hasAttribute('data-color')) {
           entity = entity.parent;
         }
@@ -127,6 +134,7 @@
       spawnAllModels();
     }
 
+    // --- СПАВН МОДЕЛЕЙ ---
     function spawnAllModels() {
       const colors = ['red', 'green', 'blue'];
       colors.forEach(color => {
@@ -137,11 +145,54 @@
     }
 
     function spawnModel(color) {
-      const modelId = `#${color}`;
       const obj = document.createElement('a-entity');
-      obj.setAttribute('gltf-model', modelId);
+      obj.setAttribute('gltf-model', `#${color}`);
       obj.setAttribute('data-color', color);
       obj.classList.add('clickable');
 
-      // РАЗМЕР: 0.1 — 0.6 м
-      const size = 0.1
+      const size = 0.1 + Math.random() * 0.5;
+      obj.setAttribute('scale', `${size} ${size} ${size}`);
+
+      const distance = 1 + Math.random() * 9;
+      const angle = (Math.random() * 180 - 90) * Math.PI / 180;
+
+      let x, z, baseY, attempts = 0;
+      do {
+        x = Math.sin(angle) * distance;
+        z = -Math.cos(angle) * distance;
+        baseY = 0.2 + Math.random() * 1.6;
+        attempts++;
+      } while (hasOverlap(x, baseY, z) && attempts < 50);
+
+      obj.setAttribute('position', `${x} ${baseY} ${z}`);
+
+      obj.setAttribute('animation', `
+        property: position;
+        to: ${x} ${baseY + 0.4} ${z};
+        dur: ${2000 + Math.random() * 3000};
+        dir: alternate;
+        loop: true;
+        easing: easeInOutSine
+      `);
+
+      modelsGroup.appendChild(obj);
+      existingPositions.push({x, y: baseY, z});
+    }
+
+    function hasOverlap(x, y, z) {
+      for (let pos of existingPositions) {
+        const dist = Math.sqrt((x - pos.x)**2 + (y - pos.y)**2 + (z - pos.z)**2);
+        if (dist < 0.8) return true;
+      }
+      return false;
+    }
+
+    function updateScales() {
+      document.getElementById('red-fill').style.width = Math.min(scores.red * 10, 100) + '%';
+      document.getElementById('green-fill').style.width = Math.min(scores.green * 10, 100) + '%';
+      document.getElementById('blue-fill').style.width = Math.min(scores.blue * 10, 100) + '%';
+    }
+  </script>
+
+</body>
+</html>
