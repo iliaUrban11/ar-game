@@ -1,4 +1,4 @@
-// script.js
+// script.js — FIXED TOUCH ANYWHERE
 let scores = { red: 0, green: 0, blue: 0 };
 let existingPositions = [];
 let sceneEl, modelsGroup, startBtn;
@@ -33,7 +33,7 @@ function initAR() {
 
   const canvas = sceneEl.canvas;
   canvas.addEventListener('touchstart', handleTouch, { passive: false });
-  canvas.addEventListener('mousedown', handleTouch);
+  canvas.addEventListener('mousedown', handleTouch); // for PC
 
   spawnAllModels();
 }
@@ -43,15 +43,12 @@ function handleTouch(event) {
 
   const touch = event.touches ? event.touches[0] : event;
   const rect = sceneEl.canvas.getBoundingClientRect();
-  const x = touch.clientX - rect.left;
-  const y = touch.clientY - rect.top;
+  const x = (touch.clientX - rect.left) / rect.width;
+  const y = (touch.clientY - rect.top) / rect.height;
 
   const camera = sceneEl.camera;
   const raycaster = new THREE.Raycaster();
-  const mouse = new THREE.Vector2(
-    (x / rect.width) * 2 - 1,
-    -(y / rect.height) * 2 + 1
-  );
+  const mouse = new THREE.Vector2(x * 2 - 1, -(y * 2 - 1));
 
   raycaster.setFromCamera(mouse, camera);
   const intersects = raycaster.intersectObjects(modelsGroup.object3D.children, true);
