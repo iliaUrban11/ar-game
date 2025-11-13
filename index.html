@@ -10,20 +10,24 @@
 
   <style>
     body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
+    
     #startBtn {
       position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
       padding: 20px 40px; background: #00b894; color: white; font-size: 1.5em;
       border: none; border-radius: 50px; cursor: pointer; z-index: 1000;
     }
+
     #ui {
       position: fixed; top: 10px; left: 10px; right: 10px; color: white;
       background: rgba(0,0,0,0.5); padding: 10px; border-radius: 10px;
       text-align: center; font-size: 1.1em; z-index: 999; display: none;
     }
+
     #progress {
-      position: fixed; bottom: 20px; left: 20px; right: 20px;
+      position: fixed; bottom: 80px; left: 20px; right: 20px;
       display: flex; gap: 10px; z-index: 999; display: none;
     }
+
     .bar {
       flex: 1; height: 25px; background: rgba(255,255,255,0.3); 
       border-radius: 12px; overflow: hidden; position: relative;
@@ -33,18 +37,28 @@
     #red-fill { background: #ff4757; }
     #green-fill { background: #2ed573; }
     #blue-fill { background: #3742fa; }
+
+    #destroyBtn {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      padding: 16px 40px; background: #e74c3c; color: white; font-size: 1.4em;
+      border: none; border-radius: 50px; cursor: pointer; z-index: 1000;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: none;
+    }
   </style>
 </head>
 <body>
 
-  <button id="startBtn">ЗАПУСТИТЬ AR1</button>
-  <div id="ui">Касайся моделей пальцем — они исчезнут!</div>
+  <button id="startBtn">ЗАПУСТИТЬ AR</button>
+
+  <div id="ui">Наведи мишень → нажми УНИЧТОЖИТЬ!</div>
 
   <div id="progress">
     <div class="bar"><div class="label">RED</div><div id="red-fill" class="fill"></div></div>
     <div class="bar"><div class="label">GREEN</div><div id="green-fill" class="fill"></div></div>
     <div class="bar"><div class="label">BLUE</div><div id="blue-fill" class="fill"></div></div>
   </div>
+
+  <button id="destroyBtn">УНИЧТОЖИТЬ</button>
 
   <a-scene
     embedded
@@ -62,7 +76,17 @@
       <a-asset-item id="blue" src="blue.glb"></a-asset-item>
     </a-assets>
 
-    <a-entity camera look-controls="enabled: true"></a-entity>
+    <!-- КАМЕРА С МИШЕНЬЮ В ЦЕНТРЕ -->
+    <a-camera look-controls="enabled: true">
+      <a-entity
+        cursor
+        position="0 0 -1"
+        geometry="primitive: ring; radiusInner: 0.03; radiusOuter: 0.05"
+        material="color: #ff4757; shader: flat; opacity: 0.7"
+        animation="property: rotation; to: 0 360 0; loop: true; dur: 3000; easing: linear"
+      ></a-entity>
+    </a-camera>
+
     <a-entity id="models"></a-entity>
 
   </a-scene>
@@ -72,4 +96,3 @@
 
 </body>
 </html>
-
