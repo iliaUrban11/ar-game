@@ -37,8 +37,8 @@
 </head>
 <body>
 
-  <button id="startBtn">ЗАПУСТИТЬ AR5(Рабочий код)</button>
-  <div id="ui">Касайся моделей — они исчезнут!</div>
+  <button id="startBtn">ЗАПУСТИТЬ AR6</button>
+  <div id="ui">Касайся моделей пальцем — они исчезнут!</div>
 
   <div id="progress">
     <div class="bar"><div class="label">RED</div><div id="red-fill" class="fill"></div></div>
@@ -53,7 +53,6 @@
     vr-mode-ui="enabled: false"
     device-orientation-permission-ui="enabled: false"
     style="display: none;"
-    cursor="rayOrigin: mouse"
     raycaster="objects: .clickable"
   >
 
@@ -63,13 +62,8 @@
       <a-asset-item id="blue" src="blue.glb"></a-asset-item>
     </a-assets>
 
-    <a-camera look-controls="enabled: true">
-      <a-cursor
-        position="0 0 -1"
-        geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
-        material="color: white; shader: flat; opacity: 0.5"
-      ></a-cursor>
-    </a-camera>
+    <!-- КАМЕРА БЕЗ КУРСОРА -->
+    <a-entity camera look-controls="enabled: true"></a-entity>
 
     <a-entity id="models"></a-entity>
 
@@ -108,7 +102,45 @@
       const arSystem = sceneEl.components.arjs;
       if (arSystem) arSystem._startSession();
 
+      // ПРЯМОЕ КАСАНИЕ ЭКРАНА
+      const canvas = sceneEl.canvas;
+      canvas.addEventListener('touchstart', handleTouch, { passive: false });
+      canvas.addEventListener('mousedown', handleTouch); // для ПК
+
       spawnAllModels();
+    }
+
+    function handleTouch(event) {
+      event.preventDefault();
+
+      const touch = event.touches ? event.touches[0] : event;
+      const rect = sceneEl.canvas.getBoundingClientRect();
+      const x = touch.clientX - rect.left;
+      const y = touch.clientY - rect.top;
+
+      const camera = sceneEl.camera;
+      const raycaster = new THREE.Raycaster();
+      const mouse = new THREE.Vector2(
+        (x / rect.width) * 2 - 1,
+        -(y / rect.height) * 2 + 1
+      );
+
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(modelsGroup.object3D.children, true);
+
+      if (intersects.length > 0) {
+        const hit = intersects[0].object;
+        let entity = hit.parent;
+        while (entity && !entity.hasAttribute('data-color')) {
+          entity = entity.parent;
+        }
+        if (entity && entity.hasAttribute('data-color')) {
+          const color = entity.getAttribute('data-color');
+          scores[color]++;
+          entity.remove();
+          updateScales();
+        }
+      }
     }
 
     function spawnAllModels() {
@@ -124,7 +156,7 @@
       const obj = document.createElement('a-entity');
       obj.setAttribute('gltf-model', `#${color}`);
       obj.setAttribute('data-color', color);
-      obj.classList.add('clickable'); // ДЛЯ RAYCASTER
+      obj.classList.add('clickable');
 
       const size = 0.1 + Math.random() * 0.5;
       obj.setAttribute('scale', `${size} ${size} ${size}`);
@@ -150,13 +182,6 @@
         loop: true;
         easing: easeInOutSine
       `);
-
-      // КЛИК ПО КАЖДОЙ МОДЕЛИ
-      obj.addEventListener('click', () => {
-        scores[color]++;
-        obj.remove();
-        updateScales();
-      });
 
       modelsGroup.appendChild(obj);
       existingPositions.push({x, y: baseY, z});
