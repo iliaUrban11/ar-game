@@ -2,13 +2,13 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>AR Камера: 3D в реальности1</title>
+  <title>AR: Закреплённые модели</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   
   <!-- A-Frame 1.6.0 -->
   <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
   
-  <!-- AR.js 3.4.7 — Markerless (без маркера) -->
+  <!-- AR.js 3.4.7 — Markerless + Трекинг движения -->
   <script src="https://raw.githack.com/AR-js-org/AR.js/3.4.7/aframe/build/aframe-ar-nft.js"></script>
 
   <style>
@@ -27,10 +27,10 @@
 </head>
 <body>
 
-  <button id="startBtn" onclick="startAR()">ЗАПУСТИТЬ КАМЕРУ1</button>
-  <div id="ui">Модели в реальном мире! Наводи камеру</div>
+  <button id="startBtn" onclick="startAR()">ЗАПУСТИТЬ AR2</button>
+  <div id="ui">Модели закреплены в мире! Поворачивай телефон</div>
 
-  <!-- AR СЦЕНА — ТОЛЬКО ДЛЯ ТЕЛЕФОНА -->
+  <!-- AR СЦЕНА — ПОЛНЫЙ ТРЕКИНГ -->
   <a-scene
     embedded
     arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;"
@@ -47,13 +47,18 @@
       <a-asset-item id="blue" src="blue.glb"></a-asset-item>
     </a-assets>
 
-    <!-- Модели — 1.5 метра перед камерой -->
+    <!-- Модели — 1.5 метра впереди, закреплены в мире -->
     <a-entity gltf-model="#red" position="-0.6 0.3 -1.5" scale="0.5 0.5 0.5"></a-entity>
     <a-entity gltf-model="#green" position="0 0.3 -1.5" scale="0.5 0.5 0.5"></a-entity>
     <a-entity gltf-model="#blue" position="0.6 0.3 -1.5" scale="0.5 0.5 0.5"></a-entity>
 
-    <!-- Камера — только для телефона -->
-    <a-entity camera look-controls="enabled: false" wasd-controls="enabled: false"></a-entity>
+    <!-- Камера с трекингом движения -->
+    <a-entity 
+      camera 
+      look-controls="enabled: true" 
+      wasd-controls="enabled: false"
+      gps-camera="simulateLatitude: 0; simulateLongitude: 0;"
+    ></a-entity>
 
   </a-scene>
 
@@ -63,22 +68,27 @@
       const ui = document.getElementById('ui');
       const sceneEl = document.querySelector('a-scene');
 
-      // Скрываем кнопку, показываем UI и сцену
       startBtn.style.display = 'none';
       ui.style.display = 'block';
       sceneEl.style.display = 'block';
 
-      // Принудительно включаем камеру (без VR!)
       if (sceneEl.hasLoaded) {
-        runAR();
+        initAR();
       } else {
-        sceneEl.addEventListener('loaded', runAR);
+        sceneEl.addEventListener('loaded', initAR);
       }
 
-      function runAR() {
-        const arSystem = sceneEl.components['arjs'];
+      function initAR() {
+        // Принудительный запуск камеры
+        const arSystem = sceneEl.components.arjs;
         if (arSystem) {
-          arSystem._startSession(); // Запускаем камеру напрямую
+          arSystem._startSession();
+        }
+        // Разрешаем поворот камеры
+        const camera = document.querySelector('[camera]');
+        if (camera) {
+          camera.components['look-controls'].pitchObject.rotation.x = 0;
+          camera.components['look-controls'].yawObject.rotation.y = 0;
         }
       }
     }
