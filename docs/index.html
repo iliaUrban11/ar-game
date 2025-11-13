@@ -24,7 +24,7 @@
 </head>
 <body>
 
-  <button id="startBtn" onclick="startAR()">ЗАПУСТИТЬ AR4</button>
+  <button id="startBtn" onclick="startAR()">ЗАПУСТИТЬ AR5</button>
   <div id="ui">30 моделей перед тобой! Ищи в 200°</div>
 
   <a-scene
@@ -71,7 +71,7 @@
 
         const colors = ['red', 'green', 'blue'];
         colors.forEach(color => {
-          for (let i = 0; i < 10;@section i++) {
+          for (let i = 0; i < 10; i++) {  // ИСПРАВЛЕНО: было "@section i++"
             spawnModel(color);
           }
         });
@@ -90,10 +90,10 @@
         const distance = 1 + Math.random() * 7;
 
         // УГОЛ: -100° → +100° (200° перед лицом)
-        const angle = (Math.random() * 200 - 100) * Math.PI / 180; // в радианах
+        const angle = (Math.random() * 200 - 100) * Math.PI / 180;
 
         const x = Math.sin(angle) * distance;
-        const z = -Math.cos(angle) * distance; // вперёд
+        const z = -Math.cos(angle) * distance;
 
         // ВЫСОТА: 0.2 — 1.8 м
         const baseY = 0.2 + Math.random() * 1.6;
