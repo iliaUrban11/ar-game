@@ -1,26 +1,25 @@
-// script.js — МИШЕНЬ + КНОПКА УНИЧТОЖИТЬ
+// script.js — МИШЕНЬ ВСЕГДА ВИДНА + КНОПКА ВНИЗУ
 let scores = { red: 0, green: 0, blue: 0 };
 let existingPositions = [];
-let sceneEl, modelsGroup, startBtn, destroyBtn;
+let sceneEl, modelsGroup, startBtn, destroyBtn, bottomPanel;
 let targetEntity = null;
 
 document.addEventListener('DOMContentLoaded', () => {
   startBtn = document.getElementById('startBtn');
   destroyBtn = document.getElementById('destroyBtn');
+  bottomPanel = document.getElementById('bottomPanel');
   startBtn.addEventListener('click', startAR);
   destroyBtn.addEventListener('click', destroyTarget);
 });
 
 function startAR() {
   const ui = document.getElementById('ui');
-  const progress = document.getElementById('progress');
   sceneEl = document.querySelector('a-scene');
   modelsGroup = document.getElementById('models');
 
   startBtn.style.display = 'none';
   ui.style.display = 'block';
-  progress.style.display = 'flex';
-  destroyBtn.style.display = 'block';
+  bottomPanel.style.display = 'flex';
   sceneEl.style.display = 'block';
   existingPositions = [];
 
@@ -35,19 +34,25 @@ function initAR() {
   const arSystem = sceneEl.components.arjs;
   if (arSystem) arSystem._startSession();
 
-  // СЛУШАЕМ ПЕРЕСЕЧЕНИЕ С МИШЕНЬЮ
-  const cursor = document.querySelector('a-camera').querySelector('[cursor]');
+  const cursor = document.getElementById('targetRing');
+
+  // МИШЕНЬ НА МОДЕЛИ — ЖЁЛТАЯ + КНОПКА АКТИВНА
   cursor.addEventListener('raycaster-intersection', (evt) => {
     const intersected = evt.detail.els[0];
     if (intersected && intersected.classList.contains('clickable')) {
       targetEntity = intersected;
-      cursor.setAttribute('material', 'color: #f1c40f; opacity: 0.9');
+      cursor.setAttribute('material', 'color: #f1c40f; opacity: 0.95');
+      destroyBtn.disabled = false;
+      destroyBtn.textContent = 'УНИЧТОЖИТЬ!';
     }
   });
 
+  // МИШЕНЬ НЕ НА МОДЕЛИ — КРАСНАЯ + КНОПКА НЕАКТИВНА
   cursor.addEventListener('raycaster-intersection-cleared', () => {
     targetEntity = null;
-    cursor.setAttribute('material', 'color: #ff4757; opacity: 0.7');
+    cursor.setAttribute('material', 'color: #ff4757; opacity: 0.8');
+    destroyBtn.disabled = true;
+    destroyBtn.textContent = 'УНИЧТОЖИТЬ';
   });
 
   spawnAllModels();
@@ -62,8 +67,10 @@ function destroyTarget() {
   updateScales();
   targetEntity = null;
 
-  const cursor = document.querySelector('[cursor]');
-  cursor.setAttribute('material', 'color: #ff4757; opacity: 0.7');
+  const cursor = document.getElementById('targetRing');
+  cursor.setAttribute('material', 'color: #ff4757; opacity: 0.8');
+  destroyBtn.disabled = true;
+  destroyBtn.textContent = 'УНИЧТОЖИТЬ';
 }
 
 function spawnAllModels() {
