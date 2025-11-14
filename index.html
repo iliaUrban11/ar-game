@@ -13,24 +13,23 @@
 
     #startBtn {
       position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      padding: 22px 50px; background: #00b894; color: white; font-size: 1.8em;
-      border: none; border-radius: 60px; cursor: pointer; z-index: 1000; font-weight: bold;
+      padding: 20px 50px; background: #00b894; color: white; font-size: 1.8em;
+      border: none; border-radius: 50px; cursor: pointer; z-index: 1000; font-weight: bold;
     }
 
     #topPanel {
       position: fixed; top: 0; left: 0; right: 0;
-      background: rgba(0,0,0,0.85); padding: 18px; z-index: 999; display: none;
-      flex-direction: column; align-items: center; gap: 12px;
+      background: rgba(0,0,0,0.8); padding: 18px; z-index: 999; display: none;
+      justify-content: center;
     }
 
     #progress {
-      display: flex; gap: 16px; width: 100%; max-width: 520px;
+      display: flex; gap: 16px; max-width: 600px; width: 100%;
     }
 
     .bar {
       flex: 1; height: 36px; background: rgba(255,255,255,0.15);
       border-radius: 18px; overflow: hidden; position: relative;
-      box-shadow: inset 0 3px 10px rgba(0,0,0,0.5);
     }
     .fill { height: 100%; width: 0%; transition: width 0.5s ease; }
     .label {
@@ -55,7 +54,7 @@
 
   <button id="startBtn">ЗАПУСТИТЬ</button>
 
-  <!-- ВЕРХНЯЯ ПАНЕЛЬ -->
+  <!-- Верхняя панель со шкалами -->
   <div id="topPanel">
     <div id="progress">
       <div class="bar"><div class="label">Нервозность</div><div id="nerv-fill" class="fill"></div></div>
@@ -73,7 +72,6 @@
     vr-mode-ui="enabled: false"
     device-orientation-permission-ui="enabled: false"
     style="display: none;"
-    raycaster="objects: .clickable"
   >
 
     <a-assets timeout="60000">
@@ -82,23 +80,22 @@
       <a-asset-item id="blue" src="blue.glb"></a-asset-item>
     </a-assets>
 
-    <!-- КАМЕРА + БОЛЬШАЯ КРУГЛАЯ МИШЕНЬ (30% экрана) -->
+    <!-- КАМЕРА + МИШЕНЬ + БОЛЬШАЯ ЗОНА ПОРАЖЕНИЯ -->
     <a-camera look-controls="enabled: true">
-      <!-- Видимая мишень -->
+      <!-- Видимый круг-прицел -->
       <a-ring
         id="crosshair"
-        radius-inner="0.35"
-        radius-outer="0.40"
-        position="0 0 -2"
+        radius-inner="0.18"
+        radius-outer="0.22"
+        position="0 0 -1.8"
         color="white"
         opacity="0.9"
-        segments-theta="64"
       ></a-ring>
 
-      <!-- НЕВИДИМАЯ ЗОНА ПОРАЖЕНИЯ — ОЧЕНЬ БОЛЬШАЯ -->
+      <!-- НЕВИДИМАЯ БОЛЬШАЯ ЗОНА ПОРАЖЕНИЯ (~30% экрана) -->
       <a-circle
         id="hitZone"
-        radius="0.6"
+        radius="0.5"
         position="0 0 -1.5"
         rotation="-90 0 0"
         material="transparent: true; opacity: 0"
