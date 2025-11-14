@@ -11,15 +11,25 @@
   <style>
     body { margin: 0; overflow: hidden; background: black; font-family: Arial; }
 
+    #startBtn, #destroyBtn {
+      position: fixed; padding: 22px 80px; border: none; border-radius: 70px;
+      font-size: 2em; font-weight: bold; cursor: pointer; z-index: 1000;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+    }
+
     #startBtn {
-      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      padding: 22px 60px; background: #00b894; color: white; font-size: 2em;
-      border: none; border-radius: 60px; cursor: pointer; z-index: 1000; font-weight: bold;
+      top: 50%; left: 50%; transform: translate(-50%, -50%);
+      background: #00b894; color: white;
+    }
+
+    #destroyBtn {
+      bottom: 40px; left: 50%; transform: translateX(-50%);
+      background: #027ACA; color: white; display: none;
     }
 
     #topPanel {
       position: fixed; top: 0; left: 0; right: 0;
-      background: rgba(0,0,0,0.8); padding: 20px; z-index: 999; display: none;
+      background: rgba(0,0,0,0.85); padding: 20px; z-index: 999; display: none;
       justify-content: center;
     }
 
@@ -37,22 +47,15 @@
       font-weight: bold; text-shadow: 1px 1px 4px black;
     }
 
-    #nerv-fill { background: #e74c3c; }
+    #nerv-fill   { background: #e74c3c; }
     #anxiety-fill { background: #f39c12; }
-    #stress-fill { background: #3498db; }
-
-    #destroyBtn {
-      position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
-      padding: 22px 90px; background: #027ACA; color: white; font-size: 2.2em;
-      border: none; border-radius: 70px; cursor: pointer; font-weight: bold;
-      box-shadow: 0 10px 30px rgba(2,122,202,0.7); z-index: 1000;
-    }
-    #destroyBtn:active { transform: translateX(-50%) scale(0.93); }
+    #stress-fill  { background: #3498db; }
   </style>
 </head>
 <body>
 
   <button id="startBtn">ЗАПУСТИТЬ</button>
+  <button id="destroyBtn">УНИЧТОЖИТЬ</button>
 
   <div id="topPanel">
     <div id="progress">
@@ -61,8 +64,6 @@
       <div class="bar"><div class="label">Стресс</div><div id="stress-fill" class="fill"></div></div>
     </div>
   </div>
-
-  <button id="destroyBtn">УНИЧТОЖИТЬ</button>
 
   <a-scene
     embedded
@@ -80,9 +81,7 @@
       <a-asset-item id="blue"  src="blue.glb"></a-asset-item>
     </a-assets>
 
-    <!-- КАМЕРА + ТВОЙ SVG-ПРИЦЕЛ + БОЛЬШАЯ ЗОНА ПОРАЖЕНИЯ -->
     <a-camera look-controls="enabled: true">
-      <!-- Видимый прицел (твой SVG) -->
       <a-image
         id="crosshair"
         src="#crosshairSvg"
@@ -92,7 +91,7 @@
         transparent="true"
       ></a-image>
 
-      <!-- Невидимая большая зона захвата (30–40% экрана) -->
+      <!-- Большая невидимая зона захвата -->
       <a-circle
         id="hitZone"
         radius="0.6"
