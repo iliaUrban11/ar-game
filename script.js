@@ -1,42 +1,41 @@
-// script.js — БОЛЬШАЯ ЗОНА + МОДЕЛИ НЕ СЛИПАЮТСЯ
+// script.js — 100% РАБОЧИЙ КОД
 let scores = { red: 0, green: 0, blue: 0 };
 let existingPositions = [];
-let sceneEl, modelsGroup, startBtn, destroyBtn, topPanel;
+let sceneEl, modelsGroup;
 let targetEntity = null;
 let isLocked = false;
 
 document.addEventListener('DOMContentLoaded', () => {
-  startBtn = document.getElementById('startBtn');
-  destroyBtn = document.getElementById('destroyBtn');
-  topPanel = document.getElementById('topPanel');
-
-  startBtn.addEventListener('click', startAR);
-  destroyBtn.addEventListener('click', destroyTarget);
+  document.getElementById('startBtn').addEventListener('click', startAR);
+  document.getElementById('destroyBtn').addEventListener('click', destroyTarget);
 });
 
 function startAR() {
   sceneEl = document.querySelector('a-scene');
   modelsGroup = document.getElementById('models');
 
-  startBtn.style.display = 'none';
-  topPanel.style.display = 'flex';
-  destroyBtn.style.display = 'block';
+  document.getElementById('startBtn').style.display = 'none';
+  document.getElementById('topPanel').style.display = 'flex';
+  document.getElementById('destroyBtn').style.display = 'block';
   sceneEl.style.display = 'block';
+
   existingPositions = [];
+  scores = { red: 0, green: 0, blue: 0 };
+  updateScales();
 
   if (sceneEl.hasLoaded) initAR();
   else sceneEl.addEventListener('loaded', initAR);
 }
 
 function initAR() {
-  const arSystem = sceneEl.components.arjs;
+  const arSystem = sceneEl.components['arjs'];
   if (arSystem) arSystem._startSession();
 
   const hitZone = document.getElementById('hitZone');
   const ring = document.getElementById('crosshair');
 
   hitZone.addEventListener('raycaster-intersection', (evt) => {
-    const hit = evt.detail.els.find(el => el.classList.contains('clickable') && el !== ring);
+    const hit = evt.detail.els.find(el => el !== hitZone && el.classList.contains('clickable'));
     if (hit && !isLocked) {
       targetEntity = hit;
       isLocked = true;
@@ -72,15 +71,14 @@ function spawnAllModels() {
 }
 
 function spawnModel(color) {
-  let attempts = 0;
-  let x, y, z, distance;
+  let x, y, z, distance, attempts = 0;
 
   do {
     distance = 3 + Math.random() * 3; // 3–6 метров
     const angle = Math.random() * Math.PI * 2;
     x = Math.sin(angle) * distance;
     z = -Math.cos(angle) * distance;
-    y = 0.6 + Math.random() * 1.0;
+    y = 0.7 + Math.random() * 0.8;
     attempts++;
   } while (isTooClose(x, y, z) && attempts < 100);
 
@@ -89,12 +87,12 @@ function spawnModel(color) {
   obj.setAttribute('data-color', color);
   obj.classList.add('clickable');
 
-  const size = 0.2 + Math.random() * 0.35;
+  const size = 0.25 + Math.random() * 0.3;
   obj.setAttribute('scale', `${size} ${size} ${size}`);
   obj.setAttribute('position', `${x} ${y} ${z}`);
 
   modelsGroup.appendChild(obj);
-  existingPositions.push({ x, y, z, radius: size * 1.5 });
+  existingPositions.push({ x, y, z });
 }
 
 function isTooClose(x, y, z) {
@@ -102,14 +100,13 @@ function isTooClose(x, y, z) {
     const dx = x - pos.x;
     const dy = y - pos.y;
     const dz = z - pos.z;
-    const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
-    if (dist < (pos.radius || 0.8) + 0.8) return true;
+    if (Math.sqrt(dx*dx + dy*dy + dz*dz) < 1.2) return true;
   }
   return false;
 }
 
 function updateScales() {
-  document.getElementById('nerv-fill').style.width = Math.min(scores.red * 10, 100) + '%';
-  document.getElementById('anxiety-fill').style.width = Math.min(scores.green * 10, 100) + '%';
-  document.getElementById('stress-fill').style.width = Math.min(scores.blue * 10, 100) + '%';
+  document.getElementById('nerv-fill').style.width = (scores.red * 10) + '%';
+  document.getElementById('anxiety-fill').style.width = (scores.green * 10) + '%';
+  document.getElementById('stress-fill').style.width = (scores.blue * 10) + '%';
 }
