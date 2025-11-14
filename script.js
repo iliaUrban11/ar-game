@@ -16,6 +16,7 @@ function startAR() {
   ui.style.display = 'block';
   progress.style.display = 'flex';
   sceneEl.style.display = 'block';
+  document.getElementById('crosshair').style.display = 'block';  // ← ВКЛЮЧАЕМ ПРИЦЕЛ
 
   existingPositions = [];
 
