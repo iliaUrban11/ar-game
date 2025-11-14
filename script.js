@@ -1,7 +1,4 @@
-**Полный финальный `script.js` — всё в одном файле, как ты любишь**  
-(с фиксами пересечений + качание влево-вправо + больше пространства по высоте)
 
-```javascript
 let scores = { nerv: 0, anx: 0, stress: 0 };
 let sceneEl, modelsGroup, gameTimer;
 let timeLeft = 30;
