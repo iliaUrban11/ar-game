@@ -1,15 +1,15 @@
-// script.js — ФИНАЛЬНАЯ ВЕРСИЯ
+// script.js — Большая зона поражения + плавная смена цвета
 let scores = { red: 0, green: 0, blue: 0 };
 let existingPositions = [];
 let sceneEl, modelsGroup, startBtn, destroyBtn, topPanel;
 let targetEntity = null;
-let isLockedOn = false;
+let isLocked = false;
 
 document.addEventListener('DOMContentLoaded', () => {
   startBtn = document.getElementById('startBtn');
   destroyBtn = document.getElementById('destroyBtn');
   topPanel = document.getElementById('topPanel');
-  
+
   startBtn.addEventListener('click', startAR);
   destroyBtn.addEventListener('click', destroyTarget);
 });
@@ -24,36 +24,28 @@ function startAR() {
   sceneEl.style.display = 'block';
   existingPositions = [];
 
-  if (sceneEl.hasLoaded) {
-    initAR();
-  } else {
-    sceneEl.addEventListener('loaded', initAR);
-  }
+  if (sceneEl.hasLoaded) initAR();
+  else sceneEl.addEventListener('loaded', initAR);
 }
 
 function initAR() {
   const arSystem = sceneEl.components.arjs;
   if (arSystem) arSystem._startSession();
 
+  const hitZone = document.getElementById('hitZone');
   const crosshair = document.getElementById('crosshair');
 
-  crosshair.addEventListener('raycaster-intersection', (evt) => {
-    const hit = evt.detail.els[0];
-    if (hit && hit.classList.contains('clickable') && !isLockedOn) {
+  hitZone.addEventListener('raycaster-intersection', (evt) => {
+    const hit = evt.detail.els.find(el => el.classList.contains('clickable') && el !== crosshair);
+    if (hit && !isLocked) {
       targetEntity = hit;
-      isLockedOn = true;
+      isLocked = true;
       crosshair.setAttribute('material', 'color', '#027ACA');
-      crosshair.setAttribute('animation', {
-        property: 'material.opacity',
-        from: 0.8,
-        to: 1,
-        dur: 300,
-        easing: 'easeOutQuad'
-      });
+      crosshair.emit('locked');
     }
   });
 
-  // ЦВЕТ НЕ ВОЗВРАЩАЕТСЯ НАЗАД!
+  // Цвет НЕ возвращается назад — остаётся синим до выстрела
   // Убираем intersection-cleared
 
   spawnAllModels();
@@ -69,18 +61,16 @@ function destroyTarget() {
 
   targetEntity.remove();
   updateScales();
-  targetEntity = null;
-  isLockedOn = false;
 
-  // Мишень остаётся синей до следующего захвата
+  // Сброс мишени после выстрела
+  targetEntity = null;
+  isLocked = false;
   document.getElementById('crosshair').setAttribute('material', 'color', 'white');
 }
 
 function spawnAllModels() {
   ['red', 'green', 'blue'].forEach(color => {
-    for (let i = 0; i < 10; i++) {
-      spawnModel(color);
-    }
+    for (let i = 0; i < 10; i++) spawnModel(color);
   });
 }
 
@@ -90,17 +80,15 @@ function spawnModel(color) {
   obj.setAttribute('data-color', color);
   obj.classList.add('clickable');
 
-  const size = 0.15 + Math.random() * 0.35;
+  const size = 0.2 + Math.random() * 0.4;
   obj.setAttribute('scale', `${size} ${size} ${size}`);
 
-  // Только 3–6 метров
-  const distance = 3 + Math.random() * 3; // 3.0 → 6.0 м
+  const distance = 3 + Math.random() * 3; // 3–6 метров
   const angle = (Math.random() * 180 - 90) * Math.PI / 180;
   const x = Math.sin(angle) * distance;
   const z = -Math.cos(angle) * distance;
-  const y = 0.5 + Math.random() * 1.2;
+  const y = 0.6 + Math.random() * 1.0;
 
-  // Без качания!
   obj.setAttribute('position', `${x} ${y} ${z}`);
 
   modelsGroup.appendChild(obj);
