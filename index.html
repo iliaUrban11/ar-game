@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>AR Снайпер!</title>
+  <title>AR Снайпер</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   
   <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
@@ -19,56 +19,58 @@
 
     #ui {
       position: fixed; top: 10px; left: 10px; right: 10px; color: white;
-      background: rgba(0,0,0,0.5); padding: 10px; border-radius: 10px;
+      background: rgba(0,0,0,0.5); padding: 12px; border-radius: 10px;
       text-align: center; font-size: 1.1em; z-index: 999; display: none;
     }
 
     #bottomPanel {
       position: fixed; bottom: 0; left: 0; right: 0;
-      background: rgba(0,0,0,0.7); padding: 15px; z-index: 999; display: none;
-      flex-direction: column; align-items: center; gap: 12px;
+      background: rgba(0,0,0,0.75); padding: 15px; z-index: 999; display: none;
+      flex-direction: column; align-items: center; gap: 15px;
     }
 
     #progress {
-      display: flex; gap: 10px; width: 100%; max-width: 400px;
+      display: flex; gap: 12px; width: 100%; max-width: 420px;
     }
 
     .bar {
-      flex: 1; height: 28px; background: rgba(255,255,255,0.3); 
-      border-radius: 14px; overflow: hidden; position: relative;
+      flex: 1; height: 30px; background: rgba(255,255,255,0.2); 
+      border-radius: 15px; overflow: hidden; position: relative;
+      box-shadow: inset 0 2px 5px rgba(0,0,0,0.3);
     }
-    .fill { height: 100%; width: 0%; transition: width 0.3s; }
-    .label { position: absolute; top: 5px; left: 8px; font-size: 13px; color: white; font-weight: bold; }
+    .fill { height: 100%; width: 0%; transition: width 0.4s ease; }
+    .label { 
+      position: absolute; top: 6px; left: 10px; font-size: 14px; color: white; 
+      font-weight: bold; text-shadow: 1px 1px 3px black;
+    }
 
     #red-fill { background: #ff4757; }
     #green-fill { background: #2ed573; }
     #blue-fill { background: #3742fa; }
 
     #destroyBtn {
-      padding: 16px 50px; background: #e74c3c; color: white; font-size: 1.5em;
+      padding: 18px 60px; background: #027ACA; color: white; font-size: 1.6em;
       border: none; border-radius: 50px; cursor: pointer;
-      box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4); font-weight: bold;
+      font-weight: bold; box-shadow: 0 6px 15px rgba(2,122,202,0.5);
+      transition: transform 0.1s;
     }
-
-    #destroyBtn:disabled {
-      background: #95a5a6; cursor: not-allowed; box-shadow: none;
-    }
+    #destroyBtn:active { transform: scale(0.95); }
   </style>
 </head>
 <body>
 
   <button id="startBtn">ЗАПУСТИТЬ AR</button>
 
-  <div id="ui">Наведи мишень → УНИЧТОЖИТЬ!</div>
+  <div id="ui">Наведи мишень → УНИЧТОЖИТЬ</div>
 
-  <!-- НИЖНЯЯ ПАНЕЛЬ: СЧЁТЧИКИ + КНОПКА -->
+  <!-- НИЖНЯЯ ПАНЕЛЬ -->
   <div id="bottomPanel">
     <div id="progress">
       <div class="bar"><div class="label">RED</div><div id="red-fill" class="fill"></div></div>
       <div class="bar"><div class="label">GREEN</div><div id="green-fill" class="fill"></div></div>
       <div class="bar"><div class="label">BLUE</div><div id="blue-fill" class="fill"></div></div>
     </div>
-    <button id="destroyBtn" disabled>УНИЧТОЖИТЬ</button>
+    <button id="destroyBtn">УНИЧТОЖИТЬ</button>
   </div>
 
   <a-scene
@@ -87,15 +89,14 @@
       <a-asset-item id="blue" src="blue.glb"></a-asset-item>
     </a-assets>
 
-    <!-- КАМЕРА С ПОСТОЯННО ВИДИМОЙ МИШЕНЬЮ -->
+    <!-- КАМЕРА + ПОСТОЯННАЯ МИШЕНЬ (БЕЛАЯ → #027ACA ПЛАВНО) -->
     <a-camera look-controls="enabled: true">
       <a-entity
         cursor
         id="targetRing"
         position="0 0 -1"
         geometry="primitive: ring; radiusInner: 0.04; radiusOuter: 0.06"
-        material="color: #ff4757; shader: flat; opacity: 0.8"
-        animation="property: rotation; to: 0 360 0; loop: true; dur: 3000; easing: linear"
+        material="color: white; shader: flat; opacity: 0.85; emissive: white; emissiveIntensity: 0.3"
       ></a-entity>
     </a-camera>
 
@@ -104,6 +105,5 @@
   </a-scene>
 
   <script src="script.js"></script>
-
 </body>
 </html>
