@@ -1,103 +1,114 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>AR Снайпер</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+// script.js — ФИНАЛЬНАЯ ВЕРСИЯ
+let scores = { red: 0, green: 0, blue: 0 };
+let existingPositions = [];
+let sceneEl, modelsGroup, startBtn, destroyBtn, topPanel;
+let targetEntity = null;
+let isLockedOn = false;
+
+document.addEventListener('DOMContentLoaded', () => {
+  startBtn = document.getElementById('startBtn');
+  destroyBtn = document.getElementById('destroyBtn');
+  topPanel = document.getElementById('topPanel');
   
-  <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
-  <script src="https://raw.githack.com/AR-js-org/AR.js/3.4.7/aframe/build/aframe-ar-nft.js"></script>
+  startBtn.addEventListener('click', startAR);
+  destroyBtn.addEventListener('click', destroyTarget);
+});
 
-  <style>
-    body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
+function startAR() {
+  sceneEl = document.querySelector('a-scene');
+  modelsGroup = document.getElementById('models');
 
-    #startBtn {
-      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      padding: 20px 40px; background: #00b894; color: white; font-size: 1.5em;
-      border: none; border-radius: 50px; cursor: pointer; z-index: 1000;
+  startBtn.style.display = 'none';
+  topPanel.style.display = 'flex';
+  destroyBtn.style.display = 'block';
+  sceneEl.style.display = 'block';
+  existingPositions = [];
+
+  if (sceneEl.hasLoaded) {
+    initAR();
+  } else {
+    sceneEl.addEventListener('loaded', initAR);
+  }
+}
+
+function initAR() {
+  const arSystem = sceneEl.components.arjs;
+  if (arSystem) arSystem._startSession();
+
+  const crosshair = document.getElementById('crosshair');
+
+  crosshair.addEventListener('raycaster-intersection', (evt) => {
+    const hit = evt.detail.els[0];
+    if (hit && hit.classList.contains('clickable') && !isLockedOn) {
+      targetEntity = hit;
+      isLockedOn = true;
+      crosshair.setAttribute('material', 'color', '#027ACA');
+      crosshair.setAttribute('animation', {
+        property: 'material.opacity',
+        from: 0.8,
+        to: 1,
+        dur: 300,
+        easing: 'easeOutQuad'
+      });
     }
+  });
 
-    #topPanel {
-      position: fixed; top: 0; left: 0; right: 0;
-      background: rgba(0,0,0,0.75); padding: 15px; z-index: 999; display: none;
-      flex-direction: column; align-items: center; gap: 12px;
+  // ЦВЕТ НЕ ВОЗВРАЩАЕТСЯ НАЗАД!
+  // Убираем intersection-cleared
+
+  spawnAllModels();
+}
+
+function destroyTarget() {
+  if (!targetEntity) return;
+
+  const color = targetEntity.getAttribute('data-color');
+  if (color === 'red') scores.red++;
+  if (color === 'green') scores.green++;
+  if (color === 'blue') scores.blue++;
+
+  targetEntity.remove();
+  updateScales();
+  targetEntity = null;
+  isLockedOn = false;
+
+  // Мишень остаётся синей до следующего захвата
+  document.getElementById('crosshair').setAttribute('material', 'color', 'white');
+}
+
+function spawnAllModels() {
+  ['red', 'green', 'blue'].forEach(color => {
+    for (let i = 0; i < 10; i++) {
+      spawnModel(color);
     }
+  });
+}
 
-    #progress {
-      display: flex; gap: 15px; width: 100%; max-width: 500px;
-    }
+function spawnModel(color) {
+  const obj = document.createElement('a-entity');
+  obj.setAttribute('gltf-model', `#${color}`);
+  obj.setAttribute('data-color', color);
+  obj.classList.add('clickable');
 
-    .bar {
-      flex: 1; height: 32px; background: rgba(255,255,255,0.2);
-      border-radius: 16px; overflow: hidden; position: relative;
-      box-shadow: inset 0 2px 8px rgba(0,0,0,0.4);
-    }
-    .fill { height: 100%; width: 0%; transition: width 0.4s ease; }
-    .label {
-      position: absolute; top: 7px; left: 12px; font-size: 14px; color: white;
-      font-weight: bold; text-shadow: 1px 1px 3px black;
-    }
+  const size = 0.15 + Math.random() * 0.35;
+  obj.setAttribute('scale', `${size} ${size} ${size}`);
 
-    #nerv-fill { background: #ff4757; }
-    #anxiety-fill { background: #f39c12; }
-    #stress-fill { background: #3742fa; }
+  // Только 3–6 метров
+  const distance = 3 + Math.random() * 3; // 3.0 → 6.0 м
+  const angle = (Math.random() * 180 - 90) * Math.PI / 180;
+  const x = Math.sin(angle) * distance;
+  const z = -Math.cos(angle) * distance;
+  const y = 0.5 + Math.random() * 1.2;
 
-    #destroyBtn {
-      position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
-      padding: 18px 70px; background: #027ACA; color: white; font-size: 1.7em;
-      border: none; border-radius: 50px; cursor: pointer; font-weight: bold;
-      box-shadow: 0 6px 20px rgba(2,122,202,0.6); z-index: 1000;
-    }
-    #destroyBtn:active { transform: translateX(-50%) scale(0.95); }
-  </style>
-</head>
-<body>
+  // Без качания!
+  obj.setAttribute('position', `${x} ${y} ${z}`);
 
-  <button id="startBtn">ЗАПУСТИТЬ AR</button>
+  modelsGroup.appendChild(obj);
+  existingPositions.push({x, y, z});
+}
 
-  <!-- ВЕРХНЯЯ ПАНЕЛЬ: НЕРВОЗНОСТЬ / ТРЕВОГА / СТРЕСС -->
-  <div id="topPanel">
-    <div id="progress">
-      <div class="bar"><div class="label">Нервозность</div><div id="nerv-fill" class="fill"></div></div>
-      <div class="bar"><div class="label">Тревога</div><div id="anxiety-fill" class="fill"></div></div>
-      <div class="bar"><div class="label">Стресс</div><div id="stress-fill" class="fill"></div></div>
-    </div>
-  </div>
-
-  <button id="destroyBtn">УНИЧТОЖИТЬ</button>
-
-  <a-scene
-    embedded
-    arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;"
-    renderer="antialias: true;"
-    vr-mode-ui="enabled: false"
-    device-orientation-permission-ui="enabled: false"
-    style="display: none;"
-    raycaster="objects: .clickable"
-  >
-
-    <a-assets timeout="30000">
-      <img id="crosshair" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiB2aWV3Qm94PSIwIDAgNjgyLjY2NyA2ODIuNjY3Ij48ZyBjbGlwLXBhdGg9InVybCgjYSkiPjxwYXRoIGQ9Ik0wIDBoNTEydjUxMkMwIDUxMiAwIDUxMi0wIDBaIiBmaWxsPSJub25lIi8+PHBhdGggZD0iTTAgMGMwLTExNC4wODYtOTIuNDg1LTIwNi41NzEtMjA2LjU3MS0yMDYuNTcxLTE0NC4wODcgMC0yMDYuNTcyIDkyLjQ4NS0yMDYuNTcyIDIwNi41NzFzOTIuNDg1IDIwNi41NzEgMjA2LjU3MiAyMDYuNTcxQzkyLjQ4NSAyMDYuNTcxIDAgMTE0LjA4NiAwIDBaIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSg0NjIuNTcxIDI1NikiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSIzMCIgc3Ryb2tlLWxpbmVjYXA9ImJ1dHQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cGF0aCBkPSJNMCAwdjY4Ljg1NyIgdHJhbnNsYXRlKDI1NiAxNSkgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmZmZmIiBzdHJva2Utd2lkdGg9IjMwIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNMC0waDY4Ljg1NyIgdHJhbnNsYXRlKDE1IDI1NikiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSIzMCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTTAgMHY2OC44NTciIHRyYW5zbGF0ZSgyNTYgNDk3KSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmZmZmIiBzdHJva2Utd2lkdGg9IjMwIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNMC0waC02OC44NTciIHRyYW5zbGF0ZSg0OTcgMjU2KSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmZmZmIiBzdHJva2Utd2lkdGg9IjMwIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNMCAwYzAtMzIuOTU4LTI2LjcxOC01OS42NzYtNTkuNjc2LTU5LjY3NlMzLTExOS4zNTIgLTMyLjk1OC0xMTkuMzUyIDAgLTU5LjY3NiAyNi43MTggLTU5LjY3NiA1OS42NzZTMC0zMi45NTggMCAwIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgzMTUuNjc2IDI1NikiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSIzMCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9nPjwvZz48L3N2Zz4=" crossorigin="anonymous">
-      <a-asset-item id="red" src="red.glb"></a-asset-item>
-      <a-asset-item id="green" src="green.glb"></a-asset-item>
-      <a-asset-item id="blue" src="blue.glb"></a-asset-item>
-    </a-assets>
-
-    <!-- КАМЕРА + ТВОЯ SVG-МИШЕНЬ -->
-    <a-camera look-controls="enabled: true">
-      <a-image
-        id="crosshair"
-        src="#crosshair"
-        position="0 0 -1.5"
-        width="0.3" height="0.3"
-        transparent="true"
-      ></a-image>
-    </a-camera>
-
-    <a-entity id="models"></a-entity>
-
-  </a-scene>
-
-  <script src="script.js"></script>
-</body>
-</html>
+function updateScales() {
+  document.getElementById('nerv-fill').style.width = Math.min(scores.red * 10, 100) + '%';
+  document.getElementById('anxiety-fill').style.width = Math.min(scores.green * 10, 100) + '%';
+  document.getElementById('stress-fill').style.width = Math.min(scores.blue * 10, 100) + '%';
+}
