@@ -1,10 +1,7 @@
-
 let scores = { nerv: 0, anx: 0, stress: 0 };
 let sceneEl, modelsGroup, gameTimer;
 let timeLeft = 30;
 let gameActive = false;
-
-// Массив уже занятых позиций (чтобы не было пересечений)
 let occupiedPositions = [];
 
 const startPage = document.getElementById('startPage');
@@ -85,17 +82,17 @@ function spawnModel(type) {
   const scale = 0.18 + Math.random() * 0.4;
   el.setAttribute('scale', `${scale} ${scale} ${scale}`);
 
-  // === НОВАЯ СИСТЕМА РАЗМЕЩЕНИЯ ===
+  // === РАЗМЕЩЕНИЕ С МИНИМАЛЬНЫМИ ПЕРЕСЕЧЕНИЯМИ ===
   let x, y, z, attempts = 0;
-  const minDist = 1.8; // минимальное расстояние между моделями
+  const minDist = 1.8;
 
   do {
-    const distance = 3 + Math.random() * 7;           // 3–10 м
-    const yaw      = (Math.random() * 100 - 50) * Math.PI / 180;   // ±50° по горизонтали
-    const pitch    = (Math.random() * 140 - 70) * Math.PI / 180;   // ±70° по вертикали (140° всего!)
+    const distance = 3 + Math.random() * 7;
+    const yaw      = (Math.random() * 100 - 50) * Math.PI / 180;   // ±50°
+    const pitch    = (Math.random() * 140 - 70) * Math.PI / 180;   // ±70°
 
     x = Math.sin(yaw) * Math.cos(pitch) * distance;
-    y = Math.sin(pitch) * distance + 1.5; // от 0.3 до 3.5 м по высоте
+    y = Math.sin(pitch) * distance + 1.5;
     z = -Math.cos(yaw) * Math.cos(pitch) * distance;
 
     attempts++;
@@ -104,24 +101,24 @@ function spawnModel(type) {
   el.setAttribute('position', `${x} ${y} ${z}`);
   occupiedPositions.push({ x, y, z });
 
-  // === ВСЕГДА СМОТРИТ НА ИГРОКА ===
+  // === ВСЕГДА СМОТРИТ НА КАМЕРУ ===
   el.addEventListener('model-loaded', () => {
     const tick = () => {
       if (!el.parentNode) return;
       el.object3D.lookAt(sceneEl.camera.position);
-      el.object3D.rotateY(Math.PI); // если модель смотрит назад — переверни
+      el.object3D.rotateY(Math.PI);
       requestAnimationFrame(tick);
     };
     tick();
   });
 
   // === КАЧАНИЕ ВЛЕВО-ВПРАВО ±20° ===
-  const swayDuration = 3000 + Math.random() * 3000;
+  const swayDur = 3000 + Math.random() * 4000;
   el.setAttribute('animation__sway', {
     property: 'rotation',
-    to: `0 20 0`,
+    to: '0 20 0',
     dir: 'alternate',
-    dur: swayDuration,
+    dur: swayDur,
     easing: 'easeInOutSine',
     loop: true
   });
@@ -131,20 +128,15 @@ function spawnModel(type) {
     scores[type]++;
     updateScales();
     el.remove();
-    // Убираем из списка занятых позиций
-    occupiedPositions = occupiedPositions.filter(p => 
-      Math.hypot(p.x - x, p.y - y, p.z - z) > 0.1
-    );
+    occupiedPositions = occupiedPositions.filter(p => Math.hypot(p.x - x, p.y - y, p.z - z) > 0.1);
   });
 
   modelsGroup.appendChild(el);
 }
 
-// Проверка пересечений
 function isTooClose(x, y, z, minDist) {
   for (const pos of occupiedPositions) {
-    const dist = Math.hypot(x - pos.x, y - pos.y, z - pos.z);
-    if (dist < minDist) return true;
+    if (Math.hypot(x - pos.x, y - pos.y, z - pos.z) < minDist) return true;
   }
   return false;
 }
@@ -154,17 +146,3 @@ function updateScales() {
   document.getElementById('anx-fill').style.width    = Math.min(scores.anx * 10, 100) + '%';
   document.getElementById('stress-fill').style.width = Math.min(scores.stress * 10, 100) + '%';
 }
-```
-
-### Что теперь идеально:
-- Модели **почти никогда не пересекаются** (min расстояние 1.8 м)
-- Появляются **по всей полусфере**: ±70° вверх/вниз (140° всего!)
-- Качаются **влево-вправо на ±20°** плавно и красиво
-- Всегда смотрят на тебя
-- При удалении — освобождают место (можно появиться новой)
-
-`index.html` оставляешь **точно тот же**, что был в прошлом сообщении.
-
-Готово.  
-Теперь это **реально крутая AR-игра**, без косяков и багов.  
-Запускай — и наслаждайся!
