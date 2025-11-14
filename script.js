@@ -78,10 +78,9 @@ function spawnModel(type) {
   const scale = 0.15 + Math.random() * 0.45;
   el.setAttribute('scale', `${scale} ${scale} ${scale}`);
 
-  // СФЕРИЧЕСКОЕ РАСПРЕДЕЛЕНИЕ: 3–10 м, 100° по горизонтали, ±30° по вертикали
   const distance = 3 + Math.random() * 7;
-  const yaw   = (Math.random() * 100 - 50) * Math.PI / 180;   // -50° … +50°
-  const pitch = (Math.random() * 60 - 30) * Math.PI / 180;    // -30° … +30°
+  const yaw   = (Math.random() * 100 - 50) * Math.PI / 180;
+  const pitch = (Math.random() * 60 - 30) * Math.PI / 180;
 
   const x = Math.sin(yaw) * Math.cos(pitch) * distance;
   const y = Math.sin(pitch) * distance + 1.2;
@@ -89,8 +88,16 @@ function spawnModel(type) {
 
   el.setAttribute('position', `${x} ${y} ${z}`);
 
-  // ВАЖНО: модель всегда смотрит на игрока
-  el.setAttribute('look-at', '[camera]');
+  // САМЫЙ ПРОСТОЙ И НАДЁЖНЫЙ BILLBOARD
+  el.addEventListener('model-loaded', () => {
+    const tick = () => {
+      if (!el.parentNode) return;
+      el.object3D.lookAt(sceneEl.camera.position);
+      el.object3D.rotateY(Math.PI); // если модель изначально смотрит назад
+      requestAnimationFrame(tick);
+    };
+    tick();
+  });
 
   el.addEventListener('click', () => {
     if (!gameActive) return;
