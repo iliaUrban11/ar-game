@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8">
-  <title>AR Грандаксин Шутер</title>
+  <title>AR Грандаксин — УНИЧТОЖАЙ!</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   
   <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
@@ -13,60 +13,64 @@
 
     #startBtn {
       position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      padding: 20px 60px; background: #00b894; color: white; font-size: 2em;
-      border: none; border-radius: 50px; cursor: pointer; z-index: 1000;
+      padding: 25px 70px; background: #00b894; color: white; font-size: 2em;
+      border: none; border-radius: 60px; cursor: pointer; z-index: 1000; box-shadow: 0 15px 40px rgba(0,0,0,0.6);
     }
 
     #ui {
       position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
-      background: rgba(0,0,0,0.7); color: white; padding: 15px 30px;
-      border-radius: 20px; font-size: 1.4em; z-index: 999; display: none;
+      background: rgba(0,0,0,0.8); color: white; padding: 15px 40px;
+      border-radius: 25px; font-size: 1.5em; z-index: 999; display: none;
     }
 
     #progress {
-      position: fixed; bottom: 120px; left: 20px; right: 20px;
+      position: fixed; bottom: 130px; left: 20px; right: 20px;
       display: flex; gap: 15px; z-index: 999; display: none;
     }
-    .bar { flex: 1; height: 32px; background: rgba(255,255,255,0.2); border-radius: 16px; overflow: hidden; position: relative; }
-    .fill { height: 100%; width: 0%; transition: width 0.4s ease; }
-    .label { position: absolute; top: 50%; left: 12px; transform: translateY(-50%); color: white; font-weight: bold; font-size: 14px; }
+    .bar { flex: 1; height: 35px; background: rgba(255,255,255,0.15); border-radius: 18px; overflow: hidden; position: relative; }
+    .fill { height: 100%; width: 0%; transition: width 0.5s ease; }
+    .label { position: absolute; top: 50%; left: 15px; transform: translateY(-50%); color: white; font-weight: bold; font-size: 15px; text-shadow: 1px 1px 3px black; }
 
     #red-fill { background: #ff4757; }
     #green-fill { background: #2ed573; }
     #blue-fill { background: #3742fa; }
 
-    /* Прицел */
+    /* Прицел в центре */
     #crosshair {
-      position: fixed; top: 50%; left: 50%; width: 50px; height: 50px;
-      margin: -25px 0 0 -25px; pointer-events: none; z-index: 998; opacity: 0.9; display: none;
+      position: fixed; top: 50%; left: 50%; width: 60px; height: 60px;
+      margin: -30px 0 0 -30px; pointer-events: none; z-index: 998; display: none;
     }
     #crosshair::before, #crosshair::after {
-      content: ''; position: absolute; background: cyan; box-shadow: 0 0 20px cyan;
+      content: ''; position: absolute; background: cyan; box-shadow: 0 0 25px cyan;
     }
-    #crosshair::before { width: 100%; height: 4px; top: 50%; margin-top: -2px; }
-    #crosshair::after { width: 4px; height: 100%; left: 50%; margin-left: -2px; }
-    .dot { position: absolute; width: 12px; height: 12px; background: cyan; border-radius: 50%;
-      top: 50%; left: 50%; margin: -6px; box-shadow: 0 0 25px cyan; }
+    #crosshair::before { width: 100%; height: 5px; top: 50%; margin-top: -2.5px; }
+    #crosshair::after { width: 5px; height: 100%; left: 50%; margin-left: -2.5px; }
+    .dot { position: absolute; width: 14px; height: 14px; background: cyan; border-radius: 50%;
+      top: 50%; left: 50%; margin: -7px; box-shadow: 0 0 30px cyan, 0 0 50px cyan; animation: pulse 2s infinite; }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 30px cyan, 0 0 50px cyan; }
+      50% { box-shadow: 0 0 40px cyan, 0 0 70px cyan; }
+    }
 
     /* Кнопка Грандаксина */
     #destroyBtn {
       position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
-      padding: 20px 50px; background: #c23616; color: white; font-size: 1.8em;
-      font-weight: bold; border: none; border-radius: 50px; cursor: pointer;
-      z-index: 999; box-shadow: 0 10px 30px rgba(194,54,22,0.7);
-      transition: all 0.2s; display: none;
+      padding: 22px 60px; background: #c23616; color: white; font-size: 1.9em;
+      font-weight: bold; border: none; border-radius: 60px; cursor: pointer;
+      z-index: 999; box-shadow: 0 12px 35px rgba(194,54,22,0.8);
+      transition: all 0.25s; display: none;
     }
     #destroyBtn.active {
-      background: #e84118; transform: translateX(-50%) scale(1.1);
-      box-shadow: 0 15px 40px rgba(232,65,24,0.9);
+      background: #e84118; transform: translateX(-50%) scale(1.15);
+      box-shadow: 0 20px 50px rgba(232,65,24,1);
     }
   </style>
 </head>
 <body>
 
   <button id="startBtn">ЗАПУСТИТЬ AR</button>
-
-  <div id="ui">Наведи прицел и жми кнопку!</div>
+  <div id="ui">Наведи прицел и жми!</div>
 
   <div id="progress">
     <div class="bar"><div class="label">RED</div><div id="red-fill" class="fill"></div></div>
@@ -75,7 +79,6 @@
   </div>
 
   <div id="crosshair"><div class="dot"></div></div>
-
   <button id="destroyBtn">УНИЧТОЖИТЬ ГРАНДАКСИНОМ</button>
 
   <a-scene
@@ -86,16 +89,13 @@
     device-orientation-permission-ui="enabled: false"
     style="display: none;"
   >
-    <!-- ВАЖНО: добавляем невидимый курсор в центр -->
-    <a-entity camera look-controls="enabled: false" raycaster="objects: .clickable; far: 100" cursor="rayOrigin: mouse"></a-entity>
+    <a-entity id="models"></a-entity>
 
     <a-assets timeout="30000">
       <a-asset-item id="red"   src="red.glb"></a-asset-item>
       <a-asset-item id="green" src="green.glb"></a-asset-item>
       <a-asset-item id="blue"  src="blue.glb"></a-asset-item>
     </a-assets>
-
-    <a-entity id="models"></a-entity>
   </a-scene>
 
   <script src="script.js"></script>
