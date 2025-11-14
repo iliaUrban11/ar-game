@@ -1,4 +1,4 @@
-// script.js — Большая зона поражения + плавная смена цвета
+// script.js — БОЛЬШАЯ ЗОНА + МОДЕЛИ НЕ СЛИПАЮТСЯ
 let scores = { red: 0, green: 0, blue: 0 };
 let existingPositions = [];
 let sceneEl, modelsGroup, startBtn, destroyBtn, topPanel;
@@ -33,20 +33,16 @@ function initAR() {
   if (arSystem) arSystem._startSession();
 
   const hitZone = document.getElementById('hitZone');
-  const crosshair = document.getElementById('crosshair');
+  const ring = document.getElementById('crosshair');
 
   hitZone.addEventListener('raycaster-intersection', (evt) => {
-    const hit = evt.detail.els.find(el => el.classList.contains('clickable') && el !== crosshair);
+    const hit = evt.detail.els.find(el => el.classList.contains('clickable') && el !== ring);
     if (hit && !isLocked) {
       targetEntity = hit;
       isLocked = true;
-      crosshair.setAttribute('material', 'color', '#027ACA');
-      crosshair.emit('locked');
+      ring.setAttribute('material', 'color', '#027ACA');
     }
   });
-
-  // Цвет НЕ возвращается назад — остаётся синим до выстрела
-  // Убираем intersection-cleared
 
   spawnAllModels();
 }
@@ -62,7 +58,6 @@ function destroyTarget() {
   targetEntity.remove();
   updateScales();
 
-  // Сброс мишени после выстрела
   targetEntity = null;
   isLocked = false;
   document.getElementById('crosshair').setAttribute('material', 'color', 'white');
@@ -70,29 +65,47 @@ function destroyTarget() {
 
 function spawnAllModels() {
   ['red', 'green', 'blue'].forEach(color => {
-    for (let i = 0; i < 10; i++) spawnModel(color);
+    for (let i = 0; i < 10; i++) {
+      spawnModel(color);
+    }
   });
 }
 
 function spawnModel(color) {
+  let attempts = 0;
+  let x, y, z, distance;
+
+  do {
+    distance = 3 + Math.random() * 3; // 3–6 метров
+    const angle = Math.random() * Math.PI * 2;
+    x = Math.sin(angle) * distance;
+    z = -Math.cos(angle) * distance;
+    y = 0.6 + Math.random() * 1.0;
+    attempts++;
+  } while (isTooClose(x, y, z) && attempts < 100);
+
   const obj = document.createElement('a-entity');
   obj.setAttribute('gltf-model', `#${color}`);
   obj.setAttribute('data-color', color);
   obj.classList.add('clickable');
 
-  const size = 0.2 + Math.random() * 0.4;
+  const size = 0.2 + Math.random() * 0.35;
   obj.setAttribute('scale', `${size} ${size} ${size}`);
-
-  const distance = 3 + Math.random() * 3; // 3–6 метров
-  const angle = (Math.random() * 180 - 90) * Math.PI / 180;
-  const x = Math.sin(angle) * distance;
-  const z = -Math.cos(angle) * distance;
-  const y = 0.6 + Math.random() * 1.0;
-
   obj.setAttribute('position', `${x} ${y} ${z}`);
 
   modelsGroup.appendChild(obj);
-  existingPositions.push({x, y, z});
+  existingPositions.push({ x, y, z, radius: size * 1.5 });
+}
+
+function isTooClose(x, y, z) {
+  for (let pos of existingPositions) {
+    const dx = x - pos.x;
+    const dy = y - pos.y;
+    const dz = z - pos.z;
+    const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+    if (dist < (pos.radius || 0.8) + 0.8) return true;
+  }
+  return false;
 }
 
 function updateScales() {
