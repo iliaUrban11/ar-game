@@ -1,5 +1,4 @@
 let scores = { nerv: 0, anx: 0, stress: 0 };
-let existingPositions = [];
 let sceneEl, modelsGroup, gameTimer;
 let timeLeft = 30;
 let gameActive = false;
@@ -42,13 +41,13 @@ function endGame() {
   modelsGroup.innerHTML = '';
 
   setTimeout(() => {
-    document.getElementById('nerv-result').textContent = `Нервозность: ${scores.nerv}`;
-    document.getElementById('anx-result').textContent = `Тревога: ${scores.anx}`;
-    document.getElementById('stress-result').textContent = `Стресс: ${scores.stress}`;
+    document.getElementById('nerv-result').innerHTML   = `Нервозность: <b>${scores.nerv}</b>`;
+    document.getElementById('anx-result').innerHTML    = `Тревога: <b>${scores.anx}</b>`;
+    document.getElementById('stress-result').innerHTML = `Стресс: <b>${scores.stress}</b>`;
 
     setTimeout(() => {
-      document.getElementById('end-nerv-fill').style.width = Math.min(scores.nerv * 10, 100) + '%';
-      document.getElementById('end-anx-fill').style.width = Math.min(scores.anx * 10, 100) + '%';
+      document.getElementById('end-nerv-fill').style.width   = Math.min(scores.nerv * 10, 100) + '%';
+      document.getElementById('end-anx-fill').style.width    = Math.min(scores.anx * 10, 100) + '%';
       document.getElementById('end-stress-fill').style.width = Math.min(scores.stress * 10, 100) + '%';
     }, 300);
 
@@ -79,16 +78,19 @@ function spawnModel(type) {
   const scale = 0.15 + Math.random() * 0.45;
   el.setAttribute('scale', `${scale} ${scale} ${scale}`);
 
-  // СФЕРИЧЕСКОЕ РАСПРЕДЕЛЕНИЕ: 3–10 м, угол 100°
-  const distance = 3 + Math.random() * 7; // 3–10 метров
-  const yaw = (Math.random() * 100 - 50) * Math.PI / 180; // -50°…+50°
-  const pitch = (Math.random() * 60 - 30) * Math.PI / 180; // -30°…+30° (чуть вверх/вниз)
+  // СФЕРИЧЕСКОЕ РАСПРЕДЕЛЕНИЕ: 3–10 м, 100° по горизонтали, ±30° по вертикали
+  const distance = 3 + Math.random() * 7;
+  const yaw   = (Math.random() * 100 - 50) * Math.PI / 180;   // -50° … +50°
+  const pitch = (Math.random() * 60 - 30) * Math.PI / 180;    // -30° … +30°
 
   const x = Math.sin(yaw) * Math.cos(pitch) * distance;
-  const y = Math.sin(pitch) * distance + 1.2; // +1.2 чтобы не в пол
+  const y = Math.sin(pitch) * distance + 1.2;
   const z = -Math.cos(yaw) * Math.cos(pitch) * distance;
 
   el.setAttribute('position', `${x} ${y} ${z}`);
+
+  // ВАЖНО: модель всегда смотрит на игрока
+  el.setAttribute('look-at', '[camera]');
 
   el.addEventListener('click', () => {
     if (!gameActive) return;
@@ -101,7 +103,7 @@ function spawnModel(type) {
 }
 
 function updateScales() {
-  document.getElementById('nerv-fill').style.width = Math.min(scores.nerv * 10, 100) + '%';
-  document.getElementById('anx-fill').style.width = Math.min(scores.anx * 10, 100) + '%';
+  document.getElementById('nerv-fill').style.width   = Math.min(scores.nerv * 10, 100) + '%';
+  document.getElementById('anx-fill').style.width    = Math.min(scores.anx * 10, 100) + '%';
   document.getElementById('stress-fill').style.width = Math.min(scores.stress * 10, 100) + '%';
 }
