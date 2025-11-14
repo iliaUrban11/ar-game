@@ -9,18 +9,17 @@
   <script src="https://raw.githack.com/AR-js-org/AR.js/3.4.7/aframe/build/aframe-ar-nft.js"></script>
 
   <style>
-    body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; background: black; }
+    body { margin: 0; overflow: hidden; background: black; }
 
     #startBtn {
       position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
       padding: 22px 50px; background: #00b894; color: white; font-size: 1.8em;
       border: none; border-radius: 60px; cursor: pointer; z-index: 1000; font-weight: bold;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.5);
     }
 
     #topPanel {
       position: fixed; top: 0; left: 0; right: 0;
-      background: rgba(0,0,0,0.8); padding: 18px 15px; z-index: 999; display: none;
+      background: rgba(0,0,0,0.85); padding: 18px; z-index: 999; display: none;
       flex-direction: column; align-items: center; gap: 12px;
     }
 
@@ -74,38 +73,36 @@
     vr-mode-ui="enabled: false"
     device-orientation-permission-ui="enabled: false"
     style="display: none;"
+    raycaster="objects: .clickable"
   >
 
     <a-assets timeout="60000">
-      <!-- ТВОЯ НОВАЯ ПРАВИЛЬНАЯ МИШЕНЬ -->
-      <img id="crosshairSvg" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNzc0IiBoZWlnaHQ9Ijc3NCIgdmlld0JveD0iMCAwIDc3NCA3NzQiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMzg2LjcwOSIgeT0iMzg0LjczIiByPSIzMDQuNjMxIiBzdHJva2U9IiMwMjdBQ0EiIHN0cm9rZS13aWR0aD0iMzciLz48cmVjdCB4PSIzNTcuNjg0IiB3aWR0aD0iNTguMDU0NyIgaGVpZ2h0PSIxNDkuNzkzIiByeD0iMjkuMDI3MyIgZmlsbD0iIzAyN0FDQSIvPjxyZWN0IHg9IjM1Ny42ODQiIHk9IjYyMy42MzMiIHdpZHRoPSI1OC4wNTQ3IiBoZWlnaHQ9IjE0OS43OTMiIHJ4PSIyOS4wMjczIiBmaWxsPSIjMDI3QUNBIi8+PHJlY3QgeD0iNzczLjQyNiIgeT0iMzU3LjY4NiIgd2lkdGg9IjU4LjA1NDciIGhlaWdodD0iMTQ5Ljc5MyIgcng9IjI5LjAyNzMiIHRyYW5zZm9ybT0icm90YXRlKDkwIDc3My40MjYgMzU3LjY4NikiIGZpbGw9IiMwMjdBQ0EiLz48cmVjdCB4PSIxNDkuNzkzIiB5PSIzNTcuNjg2IiB3aWR0aD0iNTguMDU0NyIgaGVpZ2h0PSIxNDkuNzkzIiByeD0iMjkuMDI3MyIgdHJhbnNmb3JtPSJyb3RhdGUoOTAgMTQ5Ljc5MyAzNTcuNjg2KSIgZmlsbD0iIzAyN0FDQSIvPjwvc3ZnPg==" crossorigin="anonymous">
-
       <a-asset-item id="red" src="red.glb"></a-asset-item>
       <a-asset-item id="green" src="green.glb"></a-asset-item>
       <a-asset-item id="blue" src="blue.glb"></a-asset-item>
     </a-assets>
 
-    <!-- КАМЕРА + АДАПТИВНАЯ МИШЕНЬ 30% ЭКРАНА -->
+    <!-- КАМЕРА + БОЛЬШАЯ КРУГЛАЯ МИШЕНЬ (30% экрана) -->
     <a-camera look-controls="enabled: true">
-      <a-image
+      <!-- Видимая мишень -->
+      <a-ring
         id="crosshair"
-        src="#crosshairSvg"
+        radius-inner="0.35"
+        radius-outer="0.40"
         position="0 0 -2"
-        width="0.9"
-        height="0.9"
-        transparent="true"
-        class="clickable"
-      ></a-image>
+        color="white"
+        opacity="0.9"
+        segments-theta="64"
+      ></a-ring>
 
-      <!-- НЕВИДИМАЯ ЗОНА ПОРАЖЕНИЯ (30% ширины экрана) -->
+      <!-- НЕВИДИМАЯ ЗОНА ПОРАЖЕНИЯ — ОЧЕНЬ БОЛЬШАЯ -->
       <a-circle
         id="hitZone"
-        radius="0.45"
+        radius="0.6"
         position="0 0 -1.5"
         rotation="-90 0 0"
         material="transparent: true; opacity: 0"
         class="clickable"
-        raycaster="objects: .clickable; far: 20"
       ></a-circle>
     </a-camera>
 
