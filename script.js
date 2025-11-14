@@ -1,41 +1,28 @@
-// script.js — Рабочая версия с Грандаксином
+// script.js — Финальная версия, работает везде
 
 let scores = { red: 0, green: 0, blue: 0 };
-let existingPositions = [];
+let models = [];
 let currentTarget = null;
 
-const startBtn = document.getElementById('startBtn');
-const ui = document.getElementById('ui');
-const progress = document.getElementById('progress');
-const crosshair = document.getElementById('crosshair');
-const destroyBtn = document.getElementById('destroyBtn');
 const sceneEl = document.querySelector('a-scene');
 const modelsGroup = document.getElementById('models');
-const camera = document.querySelector('a-entity[camera]');
+const destroyBtn = document.getElementById('destroyBtn');
 
-startBtn.addEventListener('click', startAR);
-destroyBtn.addEventListener('click', destroyTarget);
-
-function startAR() {
-  startBtn.style.display = 'none';
-  ui.style.display = 'block';
-  progress.style.display = 'flex';
-  crosshair.style.display = 'block';
+document.getElementById('startBtn').addEventListener('click', () => {
+  document.getElementById('startBtn').style.display = 'none';
+  document.getElementById('ui').style.display = 'block';
+  document.getElementById('progress').style.display = 'flex';
+  document.getElementById('crosshair').style.display = 'block';
   destroyBtn.style.display = 'block';
   sceneEl.style.display = 'block';
 
-  existingPositions = [];
-
-  if (sceneEl.hasLoaded) {
-    initAR();
-  } else {
-    sceneEl.addEventListener('loaded', initAR);
-  }
-}
+  if (sceneEl.hasLoaded) initAR();
+  else sceneEl.addEventListener('loaded', initAR);
+});
 
 function initAR() {
   spawnAllModels();
-  tick(); // запускаем постоянную проверку прицела
+  requestAnimationFrame(tick);
 }
 
 function spawnAllModels() {
@@ -51,68 +38,62 @@ function spawnModel(color) {
   const entity = document.createElement('a-entity');
   entity.setAttribute('gltf-model', `#${color}`);
   entity.setAttribute('data-color', color);
-  entity.classList.add('clickable');
+  entity.classList.add('target');
 
-  const size = 0.2 + Math.random() * 0.4;
+  const size = 0.25 + Math.random() * 0.35;
   entity.setAttribute('scale', `${size} ${size} ${size}`);
 
-  const distance = 2 + Math.random() * 8;
+  const distance = 2 + Math.random() * 7;
   const angle = (Math.random() * 180 - 90) * Math.PI / 180;
-  let x = Math.sin(angle) * distance;
-  let z = -Math.cos(angle) * distance;
-  let y = 0.5 + Math.random() * 1.5;
+  const x = Math.sin(angle) * distance;
+  const z = -Math.cos(angle) * distance;
+  const y = 0.5 + Math.random() * 1.8;
 
-  let attempts = 0;
-  while (hasOverlap(x, y, z) && attempts < 50) {
-    x = Math.sin(angle) * distance;
-    z = -Math.cos(angle) * distance;
-    y = 0.5 + Math.random() * 1.5;
-    attempts++;
-  }
-
-  entity.setAttribute('position', `${x} ${y} ${z}`);
-  // УБРАНО ПОКАЧИВАНИЕ!
+  entity.setAttribute('position', { x, y, z });
 
   modelsGroup.appendChild(entity);
-  existingPositions.push({ x, y, z });
+  models.push(entity);
 }
 
-function hasOverlap(x, y, z) {
-  for (const pos of existingPositions) {
-    if (Math.hypot(x - pos.x, y - pos.y, z - pos.z) < 1) return true;
-  }
-  return false;
-}
-
-// Главная функция — проверяет, что в центре прицела
 function tick() {
-  if (!camera || !camera.components.raycaster) {
+  if (!sceneEl.camera) {
     requestAnimationFrame(tick);
     return;
   }
 
-  const intersects = camera.components.raycaster.getIntersection(modelsGroup);
-  
-  if (intersects && intersects.object.el.classList.contains('clickable')) {
-    const target = intersects.object.el;
+  const camera = sceneEl.camera;
+  const center = new THREE.Vector3(0, 0, -1);
+  center.applyQuaternion(camera.quaternion);
+  center.add(camera.position);
 
-    if (currentTarget !== target) {
-      if (currentTarget) currentTarget.setObject3D('mesh', currentTarget.getObject3D('mesh'));
-      currentTarget = target;
+  let closest = null;
+  let minAngle = 0.15; // ~8-10 градусов — размер прицела
 
-      // Подсвечиваем модель
-      const mesh = currentTarget.getObject3D('mesh');
-      if (mesh) mesh.traverse(node => { if (node.isMesh) node.emissive = new THREE.Color(0x00ff00); });
+  models.forEach(model => {
+    if (!model.parentNode) return; // уже уничтожена
 
-      destroyBtn.classList.add('active');
-      destroyBtn.textContent = "УНИЧТОЖИТЬ!";
+    const pos = model.getAttribute('position');
+    const dir = new THREE.Vector3(pos.x, pos.y, pos.z).sub(camera.position).normalize();
+    const angle = dir.angleTo(center.sub(camera.position).normalize());
+
+    if (angle < minAngle) {
+      minAngle = angle;
+      closest = model;
     }
-  } else {
+  });
+
+  if (closest && closest !== currentTarget) {
     if (currentTarget) {
-      const mesh = currentTarget.getObject3D('mesh');
-      if (mesh) mesh.traverse(node => { if (node.isMesh) node.emissive = new THREE.Color(0x000000); });
-      currentTarget = null;
+      currentTarget.setAttribute('material', 'emissive', '#000000');
     }
+    currentTarget = closest;
+    currentTarget.setAttribute('material', 'emissive', '#00ff00');
+    currentTarget.setAttribute('emissiveIntensity', '0.8');
+    destroyBtn.classList.add('active');
+    destroyBtn.textContent = "УНИЧТОЖИТЬ!";
+  } else if (!closest && currentTarget) {
+    currentTarget.setAttribute('material', 'emissive', '#000000');
+    currentTarget = null;
     destroyBtn.classList.remove('active');
     destroyBtn.textContent = "УНИЧТОЖИТЬ ГРАНДАКСИНОМ";
   }
@@ -120,13 +101,12 @@ function tick() {
   requestAnimationFrame(tick);
 }
 
-function destroyTarget() {
+destroyBtn.addEventListener('click', () => {
   if (currentTarget) {
     const color = currentTarget.getAttribute('data-color');
     scores[color]++;
-    updateProgressBars();
 
-    // Эффект исчезновения
+    // Анимация исчезновения
     currentTarget.setAttribute('animation', {
       property: 'scale',
       to: '0.01 0.01 0.01',
@@ -134,13 +114,18 @@ function destroyTarget() {
       easing: 'easeInBack'
     });
 
-    setTimeout(() => currentTarget.remove(), 450);
+    setTimeout(() => {
+      currentTarget.remove();
+      models = models.filter(m => m !== currentTarget);
+    }, 450);
 
     currentTarget = null;
     destroyBtn.classList.remove('active');
     destroyBtn.textContent = "УНИЧТОЖИТЬ ГРАНДАКСИНОМ";
+
+    updateProgressBars();
   }
-}
+});
 
 function updateProgressBars() {
   document.getElementById('red-fill').style.width   = Math.min(scores.red   * 10, 100) + '%';
