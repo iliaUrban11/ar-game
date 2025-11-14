@@ -2,61 +2,67 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>AR Лови Модели!</title>
+  <title>AR Снайпер — Уничтожай стресс!</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   
   <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
   <script src="https://raw.githack.com/AR-js-org/AR.js/3.4.7/aframe/build/aframe-ar-nft.js"></script>
 
   <style>
-    body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; background: #000; }
-    
+    body { margin: 0; overflow: hidden; background: black; font-family: Arial; }
+
     #startBtn {
       position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      padding: 20px 40px; background: #00b894; color: white; font-size: 1.8em;
-      border: none; border-radius: 50px; cursor: pointer; z-index: 1000; font-weight: bold;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+      padding: 22px 60px; background: #00b894; color: white; font-size: 2em;
+      border: none; border-radius: 60px; cursor: pointer; z-index: 1000; font-weight: bold;
     }
 
-    #ui {
-      position: fixed; top: 10px; left: 10px; right: 10px; color: white;
-      background: rgba(0,0,0,0.6); padding: 12px; border-radius: 12px;
-      text-align: center; font-size: 1.3em; z-index: 999; display: none;
-      font-weight: bold;
+    #topPanel {
+      position: fixed; top: 0; left: 0; right: 0;
+      background: rgba(0,0,0,0.8); padding: 20px; z-index: 999; display: none;
+      justify-content: center;
     }
 
     #progress {
-      position: fixed; bottom: 30px; left: 20px; right: 20px;
-      display: flex; gap: 12px; z-index: 999; display: none;
+      display: flex; gap: 18px; max-width: 600px; width: 100%;
     }
 
     .bar {
-      flex: 1; height: 32px; background: rgba(255,255,255,0.25);
-      border-radius: 16px; overflow: hidden; position: relative;
-      box-shadow: inset 0 2px 8px rgba(0,0,0,0.3);
+      flex: 1; height: 38px; background: rgba(255,255,255,0.2);
+      border-radius: 19px; overflow: hidden; position: relative;
     }
-    .fill { height: 100%; width: 0%; transition: width 0.4s ease; }
+    .fill { height: 100%; width: 0%; transition: width 0.5s ease; }
     .label {
-      position: absolute; top: 6px; left: 12px; font-size: 14px; color: white;
-      font-weight: bold; text-shadow: 1px 1px 3px black;
+      position: absolute; top: 9px; left: 16px; font-size: 16px; color: white;
+      font-weight: bold; text-shadow: 1px 1px 4px black;
     }
 
-    #red-fill   { background: #ff4757; }
-    #green-fill { background: #2ed573; }
-    #blue-fill  { background: #3742fa; }
+    #nerv-fill { background: #e74c3c; }
+    #anxiety-fill { background: #f39c12; }
+    #stress-fill { background: #3498db; }
+
+    #destroyBtn {
+      position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
+      padding: 22px 90px; background: #027ACA; color: white; font-size: 2.2em;
+      border: none; border-radius: 70px; cursor: pointer; font-weight: bold;
+      box-shadow: 0 10px 30px rgba(2,122,202,0.7); z-index: 1000;
+    }
+    #destroyBtn:active { transform: translateX(-50%) scale(0.93); }
   </style>
 </head>
 <body>
 
-  <button id="startBtn">ЗАПУСТИТЬ AR</button>
+  <button id="startBtn">ЗАПУСТИТЬ</button>
 
-  <div id="ui">Касайся моделей — они исчезнут!</div>
-
-  <div id="progress">
-    <div class="bar"><div class="label">RED</div><div id="red-fill" class="fill"></div></div>
-    <div class="bar"><div class="label">GREEN</div><div id="green-fill" class="fill"></div></div>
-    <div class="bar"><div class="label">BLUE</div><div id="blue-fill" class="fill"></div></div>
+  <div id="topPanel">
+    <div id="progress">
+      <div class="bar"><div class="label">Нервозность</div><div id="nerv-fill" class="fill"></div></div>
+      <div class="bar"><div class="label">Тревога</div><div id="anxiety-fill" class="fill"></div></div>
+      <div class="bar"><div class="label">Стресс</div><div id="stress-fill" class="fill"></div></div>
+    </div>
   </div>
+
+  <button id="destroyBtn">УНИЧТОЖИТЬ</button>
 
   <a-scene
     embedded
@@ -65,30 +71,42 @@
     vr-mode-ui="enabled: false"
     device-orientation-permission-ui="enabled: false"
     style="display: none;"
-    cursor="rayOrigin: mouse"
-    raycaster="objects: .clickable"
   >
 
-    <a-assets timeout="30000">
+    <a-assets timeout="60000">
+      <img id="crosshairSvg" src="crosshair.svg">
       <a-asset-item id="red"   src="red.glb"></a-asset-item>
       <a-asset-item id="green" src="green.glb"></a-asset-item>
       <a-asset-item id="blue"  src="blue.glb"></a-asset-item>
     </a-assets>
 
+    <!-- КАМЕРА + ТВОЙ SVG-ПРИЦЕЛ + БОЛЬШАЯ ЗОНА ПОРАЖЕНИЯ -->
     <a-camera look-controls="enabled: true">
-      <a-cursor
-        position="0 0 -1"
-        geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
-        material="color: white; shader: flat; opacity: 0.7"
-      ></a-cursor>
+      <!-- Видимый прицел (твой SVG) -->
+      <a-image
+        id="crosshair"
+        src="#crosshairSvg"
+        position="0 0 -2"
+        width="0.8"
+        height="0.8"
+        transparent="true"
+      ></a-image>
+
+      <!-- Невидимая большая зона захвата (30–40% экрана) -->
+      <a-circle
+        id="hitZone"
+        radius="0.6"
+        position="0 0 -1.5"
+        rotation="-90 0 0"
+        material="transparent: true; opacity: 0"
+        class="clickable"
+      ></a-circle>
     </a-camera>
 
     <a-entity id="models"></a-entity>
 
   </a-scene>
 
-  <!-- Подключаем внешний JS -->
   <script src="script.js"></script>
-
 </body>
 </html>
