@@ -17,61 +17,54 @@
       border: none; border-radius: 50px; cursor: pointer; z-index: 1000;
     }
 
-    #ui {
-      position: fixed; top: 10px; left: 10px; right: 10px; color: white;
-      background: rgba(0,0,0,0.5); padding: 12px; border-radius: 10px;
-      text-align: center; font-size: 1.1em; z-index: 999; display: none;
-    }
-
-    #bottomPanel {
-      position: fixed; bottom: 0; left: 0; right: 0;
+    #topPanel {
+      position: fixed; top: 0; left: 0; right: 0;
       background: rgba(0,0,0,0.75); padding: 15px; z-index: 999; display: none;
-      flex-direction: column; align-items: center; gap: 15px;
+      flex-direction: column; align-items: center; gap: 12px;
     }
 
     #progress {
-      display: flex; gap: 12px; width: 100%; max-width: 420px;
+      display: flex; gap: 15px; width: 100%; max-width: 500px;
     }
 
     .bar {
-      flex: 1; height: 30px; background: rgba(255,255,255,0.2); 
-      border-radius: 15px; overflow: hidden; position: relative;
-      box-shadow: inset 0 2px 5px rgba(0,0,0,0.3);
+      flex: 1; height: 32px; background: rgba(255,255,255,0.2);
+      border-radius: 16px; overflow: hidden; position: relative;
+      box-shadow: inset 0 2px 8px rgba(0,0,0,0.4);
     }
     .fill { height: 100%; width: 0%; transition: width 0.4s ease; }
-    .label { 
-      position: absolute; top: 6px; left: 10px; font-size: 14px; color: white; 
+    .label {
+      position: absolute; top: 7px; left: 12px; font-size: 14px; color: white;
       font-weight: bold; text-shadow: 1px 1px 3px black;
     }
 
-    #red-fill { background: #ff4757; }
-    #green-fill { background: #2ed573; }
-    #blue-fill { background: #3742fa; }
+    #nerv-fill { background: #ff4757; }
+    #anxiety-fill { background: #f39c12; }
+    #stress-fill { background: #3742fa; }
 
     #destroyBtn {
-      padding: 18px 60px; background: #027ACA; color: white; font-size: 1.6em;
-      border: none; border-radius: 50px; cursor: pointer;
-      font-weight: bold; box-shadow: 0 6px 15px rgba(2,122,202,0.5);
-      transition: transform 0.1s;
+      position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+      padding: 18px 70px; background: #027ACA; color: white; font-size: 1.7em;
+      border: none; border-radius: 50px; cursor: pointer; font-weight: bold;
+      box-shadow: 0 6px 20px rgba(2,122,202,0.6); z-index: 1000;
     }
-    #destroyBtn:active { transform: scale(0.95); }
+    #destroyBtn:active { transform: translateX(-50%) scale(0.95); }
   </style>
 </head>
 <body>
 
-  <button id="startBtn">ЗАПУСТИТЬ AR</button>
+  <button id="startBtn">ЗАПУСТИТЬ AR1</button>
 
-  <div id="ui">Наведи мишень → УНИЧТОЖИТЬ</div>
-
-  <!-- НИЖНЯЯ ПАНЕЛЬ -->
-  <div id="bottomPanel">
+  <!-- ВЕРХНЯЯ ПАНЕЛЬ: НЕРВОЗНОСТЬ / ТРЕВОГА / СТРЕСС -->
+  <div id="topPanel">
     <div id="progress">
-      <div class="bar"><div class="label">RED</div><div id="red-fill" class="fill"></div></div>
-      <div class="bar"><div class="label">GREEN</div><div id="green-fill" class="fill"></div></div>
-      <div class="bar"><div class="label">BLUE</div><div id="blue-fill" class="fill"></div></div>
+      <div class="bar"><div class="label">Нервозность</div><div id="nerv-fill" class="fill"></div></div>
+      <div class="bar"><div class="label">Тревога</div><div id="anxiety-fill" class="fill"></div></div>
+      <div class="bar"><div class="label">Стресс</div><div id="stress-fill" class="fill"></div></div>
     </div>
-    <button id="destroyBtn">УНИЧТОЖИТЬ</button>
   </div>
+
+  <button id="destroyBtn">УНИЧТОЖИТЬ</button>
 
   <a-scene
     embedded
@@ -84,20 +77,21 @@
   >
 
     <a-assets timeout="30000">
+      <img id="crosshair" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiB2aWV3Qm94PSIwIDAgNjgyLjY2NyA2ODIuNjY3Ij48ZyBjbGlwLXBhdGg9InVybCgjYSkiPjxwYXRoIGQ9Ik0wIDBoNTEydjUxMkMwIDUxMiAwIDUxMi0wIDBaIiBmaWxsPSJub25lIi8+PHBhdGggZD0iTTAgMGMwLTExNC4wODYtOTIuNDg1LTIwNi41NzEtMjA2LjU3MS0yMDYuNTcxLTE0NC4wODcgMC0yMDYuNTcyIDkyLjQ4NS0yMDYuNTcyIDIwNi41NzFzOTIuNDg1IDIwNi41NzEgMjA2LjU3MiAyMDYuNTcxQzkyLjQ4NSAyMDYuNTcxIDAgMTE0LjA4NiAwIDBaIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSg0NjIuNTcxIDI1NikiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSIzMCIgc3Ryb2tlLWxpbmVjYXA9ImJ1dHQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cGF0aCBkPSJNMCAwdjY4Ljg1NyIgdHJhbnNsYXRlKDI1NiAxNSkgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmZmZmIiBzdHJva2Utd2lkdGg9IjMwIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNMC0waDY4Ljg1NyIgdHJhbnNsYXRlKDE1IDI1NikiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSIzMCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTTAgMHY2OC44NTciIHRyYW5zbGF0ZSgyNTYgNDk3KSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmZmZmIiBzdHJva2Utd2lkdGg9IjMwIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNMC0waC02OC44NTciIHRyYW5zbGF0ZSg0OTcgMjU2KSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmZmZmIiBzdHJva2Utd2lkdGg9IjMwIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNMCAwYzAtMzIuOTU4LTI2LjcxOC01OS42NzYtNTkuNjc2LTU5LjY3NlMzLTExOS4zNTIgLTMyLjk1OC0xMTkuMzUyIDAgLTU5LjY3NiAyNi43MTggLTU5LjY3NiA1OS42NzZTMC0zMi45NTggMCAwIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgzMTUuNjc2IDI1NikiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSIzMCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9nPjwvZz48L3N2Zz4=" crossorigin="anonymous">
       <a-asset-item id="red" src="red.glb"></a-asset-item>
       <a-asset-item id="green" src="green.glb"></a-asset-item>
       <a-asset-item id="blue" src="blue.glb"></a-asset-item>
     </a-assets>
 
-    <!-- КАМЕРА + ПОСТОЯННАЯ МИШЕНЬ (БЕЛАЯ → #027ACA ПЛАВНО) -->
+    <!-- КАМЕРА + ТВОЯ SVG-МИШЕНЬ -->
     <a-camera look-controls="enabled: true">
-      <a-entity
-        cursor
-        id="targetRing"
-        position="0 0 -1"
-        geometry="primitive: ring; radiusInner: 0.04; radiusOuter: 0.06"
-        material="color: white; shader: flat; opacity: 0.85; emissive: white; emissiveIntensity: 0.3"
-      ></a-entity>
+      <a-image
+        id="crosshair"
+        src="#crosshair"
+        position="0 0 -1.5"
+        width="0.3" height="0.3"
+        transparent="true"
+      ></a-image>
     </a-camera>
 
     <a-entity id="models"></a-entity>
