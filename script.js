@@ -25,6 +25,7 @@ function startGame() {
   scores = { nerv: 0, anx: 0, stress: 0 };
   timeLeft = 30;
   gameActive = true;
+  updateScales(); // сброс шкал
 
   if (sceneEl.hasLoaded) {
     initAR();
@@ -32,7 +33,6 @@ function startGame() {
     sceneEl.addEventListener('loaded', initAR);
   }
 
-  // Запуск таймера
   gameTimer = setInterval(updateTimer, 1000);
 }
 
@@ -49,25 +49,33 @@ function endGame() {
   gameActive = false;
   clearInterval(gameTimer);
   
-  // Показываем результаты
-  document.getElementById('nerv-result').textContent = `Нервозность: ${scores.nerv}`;
-  document.getElementById('anx-result').textContent = `Тревога: ${scores.anx}`;
-  document.getElementById('stress-result').textContent = `Стресс: ${scores.stress}`;
-  
   // Удаляем все модели
   modelsGroup.innerHTML = '';
   
-  // Показываем экран конца
+  // АНИМАЦИЯ ШКАЛ В КОНЦЕ
   setTimeout(() => {
+    document.getElementById('nerv-result').textContent = `Нервозность: ${scores.nerv}`;
+    document.getElementById('anx-result').textContent = `Тревога: ${scores.anx}`;
+    document.getElementById('stress-result').textContent = `Стресс: ${scores.stress}`;
+    
+    // Заполняем финальные шкалы анимацией
+    setTimeout(() => {
+      document.getElementById('end-nerv-fill').style.width = Math.min(scores.nerv * 10, 100) + '%';
+      document.getElementById('end-anx-fill').style.width = Math.min(scores.anx * 10, 100) + '%';
+      document.getElementById('end-stress-fill').style.width = Math.min(scores.stress * 10, 100) + '%';
+    }, 200);
+    
     gameUI.style.display = 'none';
     endScreen.style.display = 'flex';
-  }, 1000);
+  }, 800);
 }
 
 function resetGame() {
   endScreen.style.display = 'none';
   startPage.style.display = 'flex';
   sceneEl.style.display = 'none';
+  gameActive = false;
+  if (gameTimer) clearInterval(gameTimer);
 }
 
 function initAR() {
@@ -96,8 +104,9 @@ function spawnModel(color) {
   const size = 0.1 + Math.random() * 0.5;
   obj.setAttribute('scale', `${size} ${size} ${size}`);
 
-  const distance = 1 + Math.random() * 9;
-  const angle = (Math.random() * 180 - 90) * Math.PI / 180;
+  // НОВЫЕ ПОЗИЦИИ: 3-8м, 120° (-60°..+60°)
+  const distance = 3 + Math.random() * 5; // 3-8 метров
+  const angle = (Math.random() * 120 - 60) * Math.PI / 180; // -60°..+60°
   let x, z, baseY, attempts = 0;
 
   do {
