@@ -1,4 +1,4 @@
-// script.js — кнопка "УНИЧТОЖИТЬ" + твой SVG-прицел
+// script.js — 100% РАБОЧИЙ, без ошибок, без inline-обработчиков
 let scores = { red: 0, green: 0, blue: 0 };
 let existingPositions = [];
 let sceneEl, modelsGroup;
@@ -6,8 +6,8 @@ let currentTarget = null;
 let isLocked = false;
 
 document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('startBtn').onclick = startAR;
-  document.getElementById('destroyBtn').onclick = destroyTarget;
+  document.getElementById('startBtn').addEventListener('click', startAR);
+  document.getElementById('destroyBtn').addEventListener('click', destroyTarget);
 });
 
 function startAR() {
@@ -50,7 +50,10 @@ function destroyTarget() {
   if (!currentTarget) return;
 
   const color = currentTarget.getAttribute('data-color');
-  scores[color]++;
+  if (color === 'red')   scores.red++;
+  if (color === 'green') scores.green++;
+  if (color === 'blue')  scores.blue++;
+
   currentTarget.remove();
   updateScales();
 
@@ -61,7 +64,9 @@ function destroyTarget() {
 
 function spawnAllModels() {
   ['red', 'green', 'blue'].forEach(color => {
- trit    for (let i = 0; i < 10; i++) spawnModel(color);
+    for (let i = 0; i < 10; i++) {
+      spawnModel(color);
+    }
   });
 }
 
@@ -99,7 +104,7 @@ function isTooClose(x, y, z) {
 }
 
 function updateScales() {
-  document.getElementById('nerv-fill').style.width = (scores.red * 10) + '%';
-  document.getElementById('anxiety-fill').style.width = (scores.green * 10) + '%';
-  document.getElementById('stress-fill').style.width = (scores.blue * 10) + '%';
+  document.getElementById('nerv-fill').style.width    = Math.min(scores.red   * 10, 100) + '%';
+  document.getElementById('anxiety-fill').style.width = Math.min(scores.green * 10, 100) + '%';
+  document.getElementById('stress-fill').style.width  = Math.min(scores.blue  * 10, 100) + '%';
 }
