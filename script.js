@@ -1,30 +1,73 @@
-
-let scores = { red: 0, green: 0, blue: 0 };
+let scores = { nerv: 0, anx: 0, stress: 0 };
 let existingPositions = [];
-let sceneEl, modelsGroup, startBtn;
+let sceneEl, modelsGroup, gameTimer;
+let timeLeft = 30;
+let gameActive = false;
 
-document.addEventListener('DOMContentLoaded', () => {
-  startBtn = document.getElementById('startBtn');
-  startBtn.addEventListener('click', startAR);
-});
+const startPage = document.getElementById('startPage');
+const gameUI = document.getElementById('gameUI');
+const endScreen = document.getElementById('endScreen');
+const timerEl = document.getElementById('timer');
+const startBtn = document.getElementById('startGameBtn');
+const playAgainBtn = document.getElementById('playAgainBtn');
 
-function startAR() {
-  const ui = document.getElementById('ui');
-  const progress = document.getElementById('progress');
+startBtn.addEventListener('click', startGame);
+playAgainBtn.addEventListener('click', resetGame);
+
+function startGame() {
+  startPage.style.display = 'none';
+  gameUI.style.display = 'block';
   sceneEl = document.querySelector('a-scene');
   modelsGroup = document.getElementById('models');
-
-  startBtn.style.display = 'none';
-  ui.style.display = 'block';
-  progress.style.display = 'flex';
   sceneEl.style.display = 'block';
+  
   existingPositions = [];
+  scores = { nerv: 0, anx: 0, stress: 0 };
+  timeLeft = 30;
+  gameActive = true;
 
   if (sceneEl.hasLoaded) {
     initAR();
   } else {
     sceneEl.addEventListener('loaded', initAR);
   }
+
+  // Запуск таймера
+  gameTimer = setInterval(updateTimer, 1000);
+}
+
+function updateTimer() {
+  timeLeft--;
+  timerEl.textContent = timeLeft;
+  
+  if (timeLeft <= 0) {
+    endGame();
+  }
+}
+
+function endGame() {
+  gameActive = false;
+  clearInterval(gameTimer);
+  
+  // Показываем результаты
+  document.getElementById('nerv-result').textContent = `Нервозность: ${scores.nerv}`;
+  document.getElementById('anx-result').textContent = `Тревога: ${scores.anx}`;
+  document.getElementById('stress-result').textContent = `Стресс: ${scores.stress}`;
+  
+  // Удаляем все модели
+  modelsGroup.innerHTML = '';
+  
+  // Показываем экран конца
+  setTimeout(() => {
+    gameUI.style.display = 'none';
+    endScreen.style.display = 'flex';
+  }, 1000);
+}
+
+function resetGame() {
+  endScreen.style.display = 'none';
+  startPage.style.display = 'flex';
+  sceneEl.style.display = 'none';
 }
 
 function initAR() {
@@ -34,7 +77,7 @@ function initAR() {
 }
 
 function spawnAllModels() {
-  const colors = ['red', 'green', 'blue'];
+  const colors = ['nerv', 'anx', 'stress'];
   colors.forEach(color => {
     for (let i = 0; i < 10; i++) {
       spawnModel(color);
@@ -43,6 +86,8 @@ function spawnAllModels() {
 }
 
 function spawnModel(color) {
+  if (!gameActive) return;
+  
   const obj = document.createElement('a-entity');
   obj.setAttribute('gltf-model', `#${color}`);
   obj.setAttribute('data-color', color);
@@ -64,12 +109,12 @@ function spawnModel(color) {
 
   obj.setAttribute('position', `${x} ${baseY} ${z}`);
 
-  // КАЧАНИЕ УДАЛЕНО — модели стоят неподвижно
-
   obj.addEventListener('click', () => {
-    scores[color]++;
-    obj.remove();
+    if (!gameActive) return;
+    const colorName = obj.getAttribute('data-color');
+    scores[colorName]++;
     updateScales();
+    obj.remove();
   });
 
   modelsGroup.appendChild(obj);
@@ -85,7 +130,7 @@ function hasOverlap(x, y, z) {
 }
 
 function updateScales() {
-  document.getElementById('red-fill').style.width = Math.min(scores.red * 10, 100) + '%';
-  document.getElementById('green-fill').style.width = Math.min(scores.green * 10, 100) + '%';
-  document.getElementById('blue-fill').style.width = Math.min(scores.blue * 10, 100) + '%';
+  document.getElementById('nerv-fill').style.width = Math.min(scores.nerv * 10, 100) + '%';
+  document.getElementById('anx-fill').style.width = Math.min(scores.anx * 10, 100) + '%';
+  document.getElementById('stress-fill').style.width = Math.min(scores.stress * 10, 100) + '%';
 }
