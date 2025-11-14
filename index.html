@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>AR Лови Модели!</title>
+  <title>AR Снайпер!</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   
   <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
@@ -10,7 +10,7 @@
 
   <style>
     body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
-    
+
     #startBtn {
       position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
       padding: 20px 40px; background: #00b894; color: white; font-size: 1.5em;
@@ -23,26 +23,35 @@
       text-align: center; font-size: 1.1em; z-index: 999; display: none;
     }
 
+    #bottomPanel {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: rgba(0,0,0,0.7); padding: 15px; z-index: 999; display: none;
+      flex-direction: column; align-items: center; gap: 12px;
+    }
+
     #progress {
-      position: fixed; bottom: 80px; left: 20px; right: 20px;
-      display: flex; gap: 10px; z-index: 999; display: none;
+      display: flex; gap: 10px; width: 100%; max-width: 400px;
     }
 
     .bar {
-      flex: 1; height: 25px; background: rgba(255,255,255,0.3); 
-      border-radius: 12px; overflow: hidden; position: relative;
+      flex: 1; height: 28px; background: rgba(255,255,255,0.3); 
+      border-radius: 14px; overflow: hidden; position: relative;
     }
     .fill { height: 100%; width: 0%; transition: width 0.3s; }
-    .label { position: absolute; top: 4px; left: 8px; font-size: 12px; color: white; font-weight: bold; }
+    .label { position: absolute; top: 5px; left: 8px; font-size: 13px; color: white; font-weight: bold; }
+
     #red-fill { background: #ff4757; }
     #green-fill { background: #2ed573; }
     #blue-fill { background: #3742fa; }
 
     #destroyBtn {
-      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-      padding: 16px 40px; background: #e74c3c; color: white; font-size: 1.4em;
-      border: none; border-radius: 50px; cursor: pointer; z-index: 1000;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: none;
+      padding: 16px 50px; background: #e74c3c; color: white; font-size: 1.5em;
+      border: none; border-radius: 50px; cursor: pointer;
+      box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4); font-weight: bold;
+    }
+
+    #destroyBtn:disabled {
+      background: #95a5a6; cursor: not-allowed; box-shadow: none;
     }
   </style>
 </head>
@@ -50,15 +59,17 @@
 
   <button id="startBtn">ЗАПУСТИТЬ AR</button>
 
-  <div id="ui">Наведи мишень → нажми УНИЧТОЖИТЬ!</div>
+  <div id="ui">Наведи мишень → УНИЧТОЖИТЬ!</div>
 
-  <div id="progress">
-    <div class="bar"><div class="label">RED</div><div id="red-fill" class="fill"></div></div>
-    <div class="bar"><div class="label">GREEN</div><div id="green-fill" class="fill"></div></div>
-    <div class="bar"><div class="label">BLUE</div><div id="blue-fill" class="fill"></div></div>
+  <!-- НИЖНЯЯ ПАНЕЛЬ: СЧЁТЧИКИ + КНОПКА -->
+  <div id="bottomPanel">
+    <div id="progress">
+      <div class="bar"><div class="label">RED</div><div id="red-fill" class="fill"></div></div>
+      <div class="bar"><div class="label">GREEN</div><div id="green-fill" class="fill"></div></div>
+      <div class="bar"><div class="label">BLUE</div><div id="blue-fill" class="fill"></div></div>
+    </div>
+    <button id="destroyBtn" disabled>УНИЧТОЖИТЬ</button>
   </div>
-
-  <button id="destroyBtn">УНИЧТОЖИТЬ</button>
 
   <a-scene
     embedded
@@ -76,13 +87,14 @@
       <a-asset-item id="blue" src="blue.glb"></a-asset-item>
     </a-assets>
 
-    <!-- КАМЕРА С МИШЕНЬЮ В ЦЕНТРЕ -->
+    <!-- КАМЕРА С ПОСТОЯННО ВИДИМОЙ МИШЕНЬЮ -->
     <a-camera look-controls="enabled: true">
       <a-entity
         cursor
+        id="targetRing"
         position="0 0 -1"
-        geometry="primitive: ring; radiusInner: 0.03; radiusOuter: 0.05"
-        material="color: #ff4757; shader: flat; opacity: 0.7"
+        geometry="primitive: ring; radiusInner: 0.04; radiusOuter: 0.06"
+        material="color: #ff4757; shader: flat; opacity: 0.8"
         animation="property: rotation; to: 0 360 0; loop: true; dur: 3000; easing: linear"
       ></a-entity>
     </a-camera>
@@ -91,7 +103,6 @@
 
   </a-scene>
 
-  <!-- ВНЕШНИЙ СКРИПТ -->
   <script src="script.js"></script>
 
 </body>
