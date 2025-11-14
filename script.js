@@ -1,8 +1,8 @@
-// script.js — Грандаксин-версия
+// script.js — Рабочая версия с Грандаксином
 
 let scores = { red: 0, green: 0, blue: 0 };
 let existingPositions = [];
-let currentTarget = null; // текущая цель под прицелом
+let currentTarget = null;
 
 const startBtn = document.getElementById('startBtn');
 const ui = document.getElementById('ui');
@@ -11,6 +11,7 @@ const crosshair = document.getElementById('crosshair');
 const destroyBtn = document.getElementById('destroyBtn');
 const sceneEl = document.querySelector('a-scene');
 const modelsGroup = document.getElementById('models');
+const camera = document.querySelector('a-entity[camera]');
 
 startBtn.addEventListener('click', startAR);
 destroyBtn.addEventListener('click', destroyTarget);
@@ -34,9 +35,7 @@ function startAR() {
 
 function initAR() {
   spawnAllModels();
-
-  // Отслеживаем, какая модель сейчас под прицелом
-  setInterval(checkTargetUnderCrosshair, 100);
+  tick(); // запускаем постоянную проверку прицела
 }
 
 function spawnAllModels() {
@@ -54,45 +53,25 @@ function spawnModel(color) {
   entity.setAttribute('data-color', color);
   entity.classList.add('clickable');
 
-  const size = 0.15 + Math.random() * 0.4;
+  const size = 0.2 + Math.random() * 0.4;
   entity.setAttribute('scale', `${size} ${size} ${size}`);
 
-  const distance = 1.5 + Math.random() * 8;
+  const distance = 2 + Math.random() * 8;
   const angle = (Math.random() * 180 - 90) * Math.PI / 180;
   let x = Math.sin(angle) * distance;
   let z = -Math.cos(angle) * distance;
-  let y = 0.3 + Math.random() * 1.7;
+  let y = 0.5 + Math.random() * 1.5;
 
   let attempts = 0;
   while (hasOverlap(x, y, z) && attempts < 50) {
     x = Math.sin(angle) * distance;
     z = -Math.cos(angle) * distance;
-    y = 0.3 + Math.random() * 1.7;
+    y = 0.5 + Math.random() * 1.5;
     attempts++;
   }
 
   entity.setAttribute('position', `${x} ${y} ${z}`);
-  entity.setAttribute('animation', {
-    property: 'position',
-    to: `${x} ${y + 0.5} ${z}`,
-    dur: 2500 + Math.random() * 3000,
-    dir: 'alternate',
-    loop: true,
-    easing: 'easeInOutSine'
-  });
-
-  // Подсветка при наведении
-  entity.addEventListener('mouseenter', () => {
-    if (!currentTarget) {
-      entity.setAttribute('material', 'emissive', '#ff0000');
-      entity.setAttribute('emissiveIntensity', '0.7');
-    }
-  });
-  entity.addEventListener('mouseleave', () => {
-    if (currentTarget !== entity) {
-      entity.removeAttribute('material');
-    }
-  });
+  // УБРАНО ПОКАЧИВАНИЕ!
 
   modelsGroup.appendChild(entity);
   existingPositions.push({ x, y, z });
@@ -100,40 +79,45 @@ function spawnModel(color) {
 
 function hasOverlap(x, y, z) {
   for (const pos of existingPositions) {
-    if (Math.hypot(x - pos.x, y - pos.y, z - pos.z) < 0.9) return true;
+    if (Math.hypot(x - pos.x, y - pos.y, z - pos.z) < 1) return true;
   }
   return false;
 }
 
-function checkTargetUnderCrosshair() {
-  const raycaster = sceneEl.querySelector('a-camera').components.raycaster;
-  const intersects = raycaster.intersectObjects(modelsGroup.object3D.children, true);
+// Главная функция — проверяет, что в центре прицела
+function tick() {
+  if (!camera || !camera.components.raycaster) {
+    requestAnimationFrame(tick);
+    return;
+  }
 
-  if (intersects.length > 0) {
-    const target = intersects[0].object.el;
-    if (target.classList.contains('clickable')) {
-      if (currentTarget !== target) {
-        // Сброс предыдущей подсветки
-        if (currentTarget) {
-          currentTarget.removeAttribute('material');
-        }
-        currentTarget = target;
-        currentTarget.setAttribute('material', 'emissive', '#00ff00');
-        currentTarget.setAttribute('emissiveIntensity', '0.9');
-        destroyBtn.classList.add('active');
-        destroyBtn.textContent = "УНИЧТОЖИТЬ!";
-      }
-      return;
+  const intersects = camera.components.raycaster.getIntersection(modelsGroup);
+  
+  if (intersects && intersects.object.el.classList.contains('clickable')) {
+    const target = intersects.object.el;
+
+    if (currentTarget !== target) {
+      if (currentTarget) currentTarget.setObject3D('mesh', currentTarget.getObject3D('mesh'));
+      currentTarget = target;
+
+      // Подсвечиваем модель
+      const mesh = currentTarget.getObject3D('mesh');
+      if (mesh) mesh.traverse(node => { if (node.isMesh) node.emissive = new THREE.Color(0x00ff00); });
+
+      destroyBtn.classList.add('active');
+      destroyBtn.textContent = "УНИЧТОЖИТЬ!";
     }
+  } else {
+    if (currentTarget) {
+      const mesh = currentTarget.getObject3D('mesh');
+      if (mesh) mesh.traverse(node => { if (node.isMesh) node.emissive = new THREE.Color(0x000000); });
+      currentTarget = null;
+    }
+    destroyBtn.classList.remove('active');
+    destroyBtn.textContent = "УНИЧТОЖИТЬ ГРАНДАКСИНОМ";
   }
 
-  // Нет цели
-  if (currentTarget) {
-    currentTarget.removeAttribute('material');
-    currentTarget = null;
-  }
-  destroyBtn.classList.remove('active');
-  destroyBtn.textContent = "УНИЧТОЖИТЬ ГРАНДАКСИНОМ";
+  requestAnimationFrame(tick);
 }
 
 function destroyTarget() {
@@ -143,19 +127,14 @@ function destroyTarget() {
     updateProgressBars();
 
     // Эффект исчезновения
-    currentTarget.setAttribute('animation__scale', {
+    currentTarget.setAttribute('animation', {
       property: 'scale',
       to: '0.01 0.01 0.01',
-      dur: 300,
+      dur: 400,
       easing: 'easeInBack'
     });
-    currentTarget.setAttribute('animation__fade', {
-      property: 'material.opacity',
-      to: '0',
-      dur: 300
-    });
 
-    setTimeout(() => currentTarget.remove(), 350);
+    setTimeout(() => currentTarget.remove(), 450);
 
     currentTarget = null;
     destroyBtn.classList.remove('active');
