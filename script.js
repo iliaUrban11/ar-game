@@ -1,13 +1,15 @@
-// script.js — МИШЕНЬ ВСЕГДА ВИДНА + КНОПКА ВНИЗУ
+// script.js — ФИНАЛЬНАЯ ВЕРСИЯ: ПЛАВНАЯ МИШЕНЬ + СИНИЙ КНОПКА
 let scores = { red: 0, green: 0, blue: 0 };
 let existingPositions = [];
 let sceneEl, modelsGroup, startBtn, destroyBtn, bottomPanel;
 let targetEntity = null;
+let isAiming = false;
 
 document.addEventListener('DOMContentLoaded', () => {
   startBtn = document.getElementById('startBtn');
   destroyBtn = document.getElementById('destroyBtn');
   bottomPanel = document.getElementById('bottomPanel');
+  
   startBtn.addEventListener('click', startAR);
   destroyBtn.addEventListener('click', destroyTarget);
 });
@@ -34,25 +36,49 @@ function initAR() {
   const arSystem = sceneEl.components.arjs;
   if (arSystem) arSystem._startSession();
 
-  const cursor = document.getElementById('targetRing');
+  const ring = document.getElementById('targetRing');
 
-  // МИШЕНЬ НА МОДЕЛИ — ЖЁЛТАЯ + КНОПКА АКТИВНА
-  cursor.addEventListener('raycaster-intersection', (evt) => {
-    const intersected = evt.detail.els[0];
-    if (intersected && intersected.classList.contains('clickable')) {
-      targetEntity = intersected;
-      cursor.setAttribute('material', 'color: #f1c40f; opacity: 0.95');
-      destroyBtn.disabled = false;
-      destroyBtn.textContent = 'УНИЧТОЖИТЬ!';
+  // НАВЕДЁН НА МОДЕЛЬ → ПЛАВНО СИНИЙ
+  ring.addEventListener('raycaster-intersection', (evt) => {
+    const hit = evt.detail.els[0];
+    if (hit && hit.classList.contains('clickable')) {
+      targetEntity = hit;
+      if (!isAiming) {
+        isAiming = true;
+        ring.setAttribute('animation__color', {
+          property: 'material.color',
+          to: '#027ACA',
+          dur: 300,
+          easing: 'easeOutQuad'
+        });
+        ring.setAttribute('animation__emissive', {
+          property: 'material.emissive',
+          to: '#027ACA',
+          dur: 300,
+          easing: 'easeOutQuad'
+        });
+      }
     }
   });
 
-  // МИШЕНЬ НЕ НА МОДЕЛИ — КРАСНАЯ + КНОПКА НЕАКТИВНА
-  cursor.addEventListener('raycaster-intersection-cleared', () => {
+  // УШЁЛ С МОДЕЛИ → ПЛАВНО БЕЛЫЙ
+  ring.addEventListener('raycaster-intersection-cleared', () => {
     targetEntity = null;
-    cursor.setAttribute('material', 'color: #ff4757; opacity: 0.8');
-    destroyBtn.disabled = true;
-    destroyBtn.textContent = 'УНИЧТОЖИТЬ';
+    if (isAiming) {
+      isAiming = false;
+      ring.setAttribute('animation__color', {
+        property: 'material.color',
+        to: 'white',
+        dur: 400,
+        easing: 'easeOutQuad'
+      });
+      ring.setAttribute('animation__emissive', {
+        property: 'material.emissive',
+        to: 'white',
+        dur: 400,
+        easing: 'easeOutQuad'
+      });
+    }
   });
 
   spawnAllModels();
@@ -66,11 +92,6 @@ function destroyTarget() {
   targetEntity.remove();
   updateScales();
   targetEntity = null;
-
-  const cursor = document.getElementById('targetRing');
-  cursor.setAttribute('material', 'color: #ff4757; opacity: 0.8');
-  destroyBtn.disabled = true;
-  destroyBtn.textContent = 'УНИЧТОЖИТЬ';
 }
 
 function spawnAllModels() {
@@ -116,8 +137,7 @@ function spawnModel(color) {
 
 function hasOverlap(x, y, z) {
   for (let pos of existingPositions) {
-    const dist = Math.sqrt((x - pos.x)**2 + (y - pos.y)**2 + (z - pos.z)**2);
-    if (dist < 0.8) return true;
+    if (Math.sqrt((x - pos.x)**2 + (y - pos.y)**2 + (z - pos.z)**2) < 0.8) return true;
   }
   return false;
 }
