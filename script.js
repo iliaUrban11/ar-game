@@ -2,7 +2,6 @@ let scores = { nerv: 0, anx: 0, stress: 0 };
 let sceneEl, modelsGroup, gameTimer;
 let timeLeft = 30;
 let gameActive = false;
-let occupiedPositions = [];
 
 const startPage = document.getElementById('startPage');
 const gameUI = document.getElementById('gameUI');
@@ -24,7 +23,6 @@ function startGame() {
   scores = { nerv: 0, anx: 0, stress: 0 };
   timeLeft = 30;
   gameActive = true;
-  occupiedPositions = [];
   updateScales();
 
   if (sceneEl.hasLoaded) initAR();
@@ -65,9 +63,7 @@ function initAR() {
 function spawnAllModels() {
   const types = ['nerv', 'anx', 'stress'];
   types.forEach(type => {
-    for (let i = 0; i < 10; i++) {
-      spawnModel(type);
-    }
+    for (let i = 0; i < 10; i++) spawnModel(type);
   });
 }
 
@@ -79,48 +75,28 @@ function spawnModel(type) {
   el.setAttribute('data-color', type);
   el.classList.add('clickable');
 
-  const scale = 0.18 + Math.random() * 0.4;
+  const scale = 0.15 + Math.random() * 0.45;
   el.setAttribute('scale', `${scale} ${scale} ${scale}`);
 
-  // === РАЗМЕЩЕНИЕ С МИНИМАЛЬНЫМИ ПЕРЕСЕЧЕНИЯМИ ===
-  let x, y, z, attempts = 0;
-  const minDist = 1.8;
+  const distance = 3 + Math.random() * 7;
+  const yaw   = (Math.random() * 100 - 50) * Math.PI / 180;
+  const pitch = (Math.random() * 60 - 30) * Math.PI / 180;
 
-  do {
-    const distance = 3 + Math.random() * 7;
-    const yaw      = (Math.random() * 100 - 50) * Math.PI / 180;   // ±50°
-    const pitch    = (Math.random() * 140 - 70) * Math.PI / 180;   // ±70°
-
-    x = Math.sin(yaw) * Math.cos(pitch) * distance;
-    y = Math.sin(pitch) * distance + 1.5;
-    z = -Math.cos(yaw) * Math.cos(pitch) * distance;
-
-    attempts++;
-  } while (isTooClose(x, y, z, minDist) && attempts < 100);
+  const x = Math.sin(yaw) * Math.cos(pitch) * distance;
+  const y = Math.sin(pitch) * distance + 1.2;
+  const z = -Math.cos(yaw) * Math.cos(pitch) * distance;
 
   el.setAttribute('position', `${x} ${y} ${z}`);
-  occupiedPositions.push({ x, y, z });
 
-  // === ВСЕГДА СМОТРИТ НА КАМЕРУ ===
+  // САМЫЙ ПРОСТОЙ И НАДЁЖНЫЙ BILLBOARD
   el.addEventListener('model-loaded', () => {
     const tick = () => {
       if (!el.parentNode) return;
       el.object3D.lookAt(sceneEl.camera.position);
-      el.object3D.rotateY(Math.PI);
+      el.object3D.rotateY(Math.PI); // если модель изначально смотрит назад
       requestAnimationFrame(tick);
     };
     tick();
-  });
-
-  // === КАЧАНИЕ ВЛЕВО-ВПРАВО ±20° ===
-  const swayDur = 3000 + Math.random() * 4000;
-  el.setAttribute('animation__sway', {
-    property: 'rotation',
-    to: '0 20 0',
-    dir: 'alternate',
-    dur: swayDur,
-    easing: 'easeInOutSine',
-    loop: true
   });
 
   el.addEventListener('click', () => {
@@ -128,17 +104,9 @@ function spawnModel(type) {
     scores[type]++;
     updateScales();
     el.remove();
-    occupiedPositions = occupiedPositions.filter(p => Math.hypot(p.x - x, p.y - y, p.z - z) > 0.1);
   });
 
   modelsGroup.appendChild(el);
-}
-
-function isTooClose(x, y, z, minDist) {
-  for (const pos of occupiedPositions) {
-    if (Math.hypot(x - pos.x, y - pos.y, z - pos.z) < minDist) return true;
-  }
-  return false;
 }
 
 function updateScales() {
