@@ -2,6 +2,20 @@ let scores = { nerv: 0, anx: 0, stress: 0 };
 let sceneEl, modelsGroup, gameTimer;
 let timeLeft = 30;
 let gameActive = false;
+const hitSound = document.getElementById('hitSound');
+
+// 30 заранее расставленных позиций (без пересечений)
+const predefinedPositions = [
+  // Нервозность
+  {x: -4, y: 2.0, z: -6}, {x: -2, y: 1.5, z: -5}, {x: 0, y: 2.5, z: -7}, {x: 3, y: 1.8, z: -6}, {x: 5, y: 2.2, z: -8},
+  {x: -3, y: 3.0, z: -7}, {x: 2, y: 0.8, z: -5}, {x: -1, y: 3.5, z: -9}, {x: 4, y: 2.8, z: -7}, {x: 1, y: 1.2, z: -8},
+  // Тревога
+  {x: -5, y: 1.0, z: -7}, {x: -3, y: 2.8, z: -5}, {x: 1, y: 3.2, z: -6}, {x: 4, y: 1.5, z: -9}, {x: -1, y: 2.0, z: -8},
+  {x: 6, y: 2.5, z: -6}, {x: -4, y: 0.9, z: -5}, {x: 2, y: 3.8, z: -8}, {x: -2, y: 1.8, z: -9}, {x: 3, y: 2.4, z: -5},
+  // Стресс
+  {x: 0, y: 1.0, z: -6}, {x: -6, y: 2.0, z: -8}, {x: 5, y: 3.0, z: -7}, {x: -2, y: 2.6, z: -6}, {x: 3, y: 0.7, z: -7},
+  {x: -5, y: 3.3, z: -6}, {x: 4, y: 1.3, z: -8}, {x: -1, y: 2.9, z: -5}, {x: 2, y: 1.6, z: -9}, {x: 1, y: 3.5, z: -7}
+];
 
 const startPage = document.getElementById('startPage');
 const gameUI = document.getElementById('gameUI');
@@ -57,43 +71,34 @@ function endGame() {
 }
 
 function initAR() {
-  spawnAllModels();
+  spawnFixedModels();
 }
 
-function spawnAllModels() {
+function spawnFixedModels() {
   const types = ['nerv', 'anx', 'stress'];
-  types.forEach(type => {
-    for (let i = 0; i < 10; i++) spawnModel(type);
+  let index = 0;
+
+  predefinedPositions.forEach(pos => {
+    const type = types[Math.floor(index / 10)]; // 0–9: nerv, 10–19: anx, 20–29: stress
+    createModel(type, pos.x, pos.y, pos.z);
+    index++;
   });
 }
 
-function spawnModel(type) {
-  if (!gameActive) return;
-
+function createModel(type, x, y, z) {
   const el = document.createElement('a-entity');
   el.setAttribute('gltf-model', `#${type}`);
   el.setAttribute('data-color', type);
   el.classList.add('clickable');
-
-  const scale = 0.15 + Math.random() * 0.45;
-  el.setAttribute('scale', `${scale} ${scale} ${scale}`);
-
-  const distance = 3 + Math.random() * 7;
-  const yaw   = (Math.random() * 100 - 50) * Math.PI / 180;
-  const pitch = (Math.random() * 60 - 30) * Math.PI / 180;
-
-  const x = Math.sin(yaw) * Math.cos(pitch) * distance;
-  const y = Math.sin(pitch) * distance + 1.2;
-  const z = -Math.cos(yaw) * Math.cos(pitch) * distance;
-
+  el.setAttribute('scale', '0.35 0.35 0.35');
   el.setAttribute('position', `${x} ${y} ${z}`);
 
-  // САМЫЙ ПРОСТОЙ И НАДЁЖНЫЙ BILLBOARD
+  // Всегда смотрит на камеру (без качания!)
   el.addEventListener('model-loaded', () => {
     const tick = () => {
       if (!el.parentNode) return;
       el.object3D.lookAt(sceneEl.camera.position);
-      el.object3D.rotateY(Math.PI); // если модель изначально смотрит назад
+      el.object3D.rotateY(Math.PI); // если модель изначально развёрнута спиной
       requestAnimationFrame(tick);
     };
     tick();
@@ -101,9 +106,22 @@ function spawnModel(type) {
 
   el.addEventListener('click', () => {
     if (!gameActive) return;
+
     scores[type]++;
     updateScales();
-    el.remove();
+
+    // Звук
+    hitSound.currentTime = 0;
+    hitSound.play();
+
+    // Плавное исчезновение
+    el.setAttribute('animation', {
+      property: 'scale',
+      to: '0.01 0.01 0.01',
+      dur: 300,
+      easing: 'easeInBack'
+    });
+    setTimeout(() => el.remove(), 350);
   });
 
   modelsGroup.appendChild(el);
@@ -111,6 +129,6 @@ function spawnModel(type) {
 
 function updateScales() {
   document.getElementById('nerv-fill').style.width   = Math.min(scores.nerv * 10, 100) + '%';
-  document.getElementById('anx-fill').style.width    = Math.min(scores.anx * 10, 100) + '%';
-  document.getElementById('stress-fill').style.width = Math.min(scores.stress * 10, 100) + '%';
+  document.getElementById('anx-fill').style.width    = Math.min(scores.anx *10, 100) + '%';
+  document.getElementById('stress-fill').style.width = Math.min(scores.stress *10, 100) + '%';
 }
