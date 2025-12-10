@@ -4,8 +4,10 @@
   <meta charset="utf-8">
   <title>Грандаксин против</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  
   <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
   <script src="https://raw.githack.com/AR-js-org/AR.js/3.4.7/aframe/build/aframe-ar-nft.js"></script>
+
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -59,8 +61,9 @@
 </head>
 <body>
 
+  <!-- СТАРТОВЫЙ ЭКРАН -->
   <div id="startPage">
-    <div id="logo">ГРАНДАКСИН ПРОТИВ3</div>
+    <div id="logo">ГРАНДАКСИН ПРОТИВ</div>
     <div id="rules">
       Совместите цель с летающим симптомом<br>
       и нажмите на экран.<br><br>
@@ -69,6 +72,7 @@
     <button id="startGameBtn">НАЧАТЬ</button>
   </div>
 
+  <!-- ИГРОВОЙ UI -->
   <div id="gameUI">
     <div id="timer">30</div>
     <div id="progress">
@@ -81,6 +85,7 @@
     </div>
   </div>
 
+  <!-- ЭКРАН РЕЗУЛЬТАТОВ -->
   <div id="endScreen">
     <div id="endTitle">Спасибо за игру!</div>
     <div id="endProgress">
@@ -97,13 +102,27 @@
     <button id="playAgainBtn">ИГРАТЬ ЕЩЁ РАЗ</button>
   </div>
 
-  <!-- ЗВУК (теперь он не ломает ничего) -->
+  <!-- ЗВУК ПОПАДАНИЯ -->
   <audio id="hitSound" src="hit.mp3" preload="auto"></audio>
 
-  <a-scene embedded arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;"
-    renderer="antialias: true" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false"
-    style="display:none;" cursor="rayOrigin: mouse" raycaster="objects: .clickable">
-    
+  <!-- AR СЦЕНА С СГЛАЖИВАНИЕМ ТРЯСКИ -->
+  <a-scene
+    embedded
+    arjs="sourceType: webcam;
+          detectionMode: mono;
+          trackingMethod: best;
+          debugUIEnabled: false;
+          maxDetectionRate: 30;
+          canvasWidth: 640;
+          canvasHeight: 480;
+          smoothingFactor: 0.95;"   <!-- УБИРАЕТ ВСЮ ТРЯСКУ РУК -->
+    renderer="antialias: true"
+    vr-mode-ui="enabled: false"
+    device-orientation-permission-ui="enabled: false"
+    style="display:none;"
+    cursor="rayOrigin: mouse"
+    raycaster="objects: .clickable">
+
     <a-assets timeout="60000">
       <a-asset-item id="nerv"   src="red.glb"></a-asset-item>
       <a-asset-item id="anx"    src="green.glb"></a-asset-item>
@@ -118,8 +137,126 @@
     <a-entity id="models"></a-entity>
   </a-scene>
 
-  <!-- ВСЁ РАБОТАЕТ ЧЕРЕЗ ВНЕШНИЙ ФАЙЛ -->
-  <script src="script.js"></script>
+  <!-- ВСЁ В ОДНОМ ФАЙЛЕ — НИКАКИХ ОШИБОК CSP -->
+  <script>
+    let scores = { nerv: 0, anx: 0, stress: 0 };
+    let sceneEl, modelsGroup, gameTimer;
+    let timeLeft = 30;
+    let gameActive = false;
+    const hitSound = document.getElementById('hitSound');
+
+    const positions = [
+      {x:-4,y:2.0,z:-6},{x:-2,y:1.5,z:-5},{x:0,y:2.5,z:-7},{x:3,y:1.8,z:-6},{x:5,y:2.2,z:-8},
+      {x:-3,y:3.0,z:-7},{x:2,y:0.8,z:-5},{x:-1,y:3.5,z:-9},{x:4,y:2.8,z:-7},{x:1,y:1.2,z:-8},
+      {x:-5,y:1.0,z:-7},{x:-3,y:2.8,z:-5},{x:1,y:3.2,z:-6},{x:4,y:1.5,z:-9},{x:-1,y:2.0,z:-8},
+      {x:6,y:2.5,z:-6},{x:-4,y:0.9,z:-5},{x:2,y:3.8,z:-8},{x:-2,y:1.8,z:-9},{x:3,y:2.4,z:-5},
+      {x:0,y:1.0,z:-6},{x:-6,y:2.0,z:-8},{x:5,y:3.0,z:-7},{x:-2,y:2.6,z:-6},{x:3,y:0.7,z:-7},
+      {x:-5,y:3.3,z:-6},{x:4,y:1.3,z:-8},{x:-1,y:2.9,z:-5},{x:2,y:1.6,z:-9},{x:1,y:3.5,z:-7}
+    ];
+
+    document.getElementById('startGameBtn').onclick = startGame;
+    document.getElementById('playAgainBtn').onclick = () => location.reload();
+
+    function startGame() {
+      document.getElementById('startPage').style.display = 'none';
+      document.getElementById('gameUI').style.display = 'block';
+      sceneEl = document.querySelector('a-scene');
+      modelsGroup = document.getElementById('models');
+      sceneEl.style.display = 'block';
+
+      scores = { nerv: 0, anx: 0, stress: 0 };
+      timeLeft = 30;
+      gameActive = true;
+      updateScales();
+
+      if (sceneEl.hasLoaded) initAR();
+      else sceneEl.addEventListener('loaded', initAR);
+
+      gameTimer = setInterval(() => {
+        timeLeft--;
+        document.getElementById('timer').textContent = timeLeft;
+        if (timeLeft <= 0) endGame();
+      }, 1000);
+    }
+
+    function endGame() {
+      gameActive = false;
+      clearInterval(gameTimer);
+      modelsGroup.innerHTML = '';
+
+      setTimeout(() => {
+        document.getElementById('nerv-result').innerHTML   = `Нервозность: <b>${scores.nerv}</b>`;
+        document.getElementById('anx-result').innerHTML    = `Тревога: <b>${scores.anx}</b>`;
+        document.getElementById('stress-result').innerHTML = `Стресс: <b>${scores.stress}</b>`;
+
+        setTimeout(() => {
+          document.getElementById('end-nerv-fill').style.width   = Math.min(scores.nerv * 10, 100) + '%';
+          document.getElementById('end-anx-fill').style.width    = Math.min(scores.anx * 10, 100) + '%';
+          document.getElementById('end-stress-fill').style.width = Math.min(scores.stress * 10, 100) + '%';
+        }, 300);
+
+        document.getElementById('gameUI').style.display = 'none';
+        document.getElementById('endScreen').style.display = 'flex';
+      }, 800);
+    }
+
+    function initAR() {
+      spawnAll();
+    }
+
+    function spawnAll() {
+      const types = ['nerv', 'anx', 'stress'];
+      let i = 0;
+      positions.forEach(p => {
+        const type = types[Math.floor(i / 10)];
+        makeModel(type, p.x, p.y, p.z);
+        i++;
+      });
+    }
+
+    function makeModel(type, x, y, z) {
+      const el = document.createElement('a-entity');
+      el.setAttribute('gltf-model', `#${type}`);
+      el.setAttribute('data-color', type);
+      el.classList.add('clickable');
+      el.setAttribute('scale', '0.35 0.35 0.35');
+      el.setAttribute('position', `${x} ${y} ${z}`);
+
+      el.addEventListener('model-loaded', () => {
+        const obj = el.object3D;
+        obj.traverse(n => { if (n.isMesh) n.frustumCulled = false; });
+
+        const update = () => {
+          obj.lookAt(sceneEl.camera.position);
+          obj.rotateY(Math.PI);
+        };
+
+        sceneEl.camera.el.addEventListener('componentchanged', e => {
+          if (e.detail.name === 'position' || e.detail.name === 'rotation') update();
+        });
+        update();
+      });
+
+      });
+
+      el.addEventListener('click', () => {
+        if (!gameActive) return;
+        scores[type]++;
+        updateScales();
+        hitSound.currentTime = 0;
+        hitSound.play();
+        el.setAttribute('animation', {property:'scale', to:'0.01 0.01 0.01', dur:300, easing:'easeInBack'});
+        setTimeout(() => el.remove(), 350);
+      });
+
+      modelsGroup.appendChild(el);
+    }
+
+    function updateScales() {
+      document.getElementById('nerv-fill').style.width   = Math.min(scores.nerv * 10, 100) + '%';
+      document.getElementById('anx-fill').style.width    = Math.min(scores.anx * 10, 100) + '%';
+      document.getElementById('stress-fill').style.width = Math.min(scores.stress * 10, 100) + '%';
+    }
+  </script>
 </body>
 </html>
-
