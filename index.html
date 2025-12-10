@@ -5,7 +5,7 @@
   <title>Грандаксин против</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
-  <script src="https://raw.githack.com/AR-js-org/AR.js/3.4.7/aframe/build/aframe-ar-nft.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.7/aframe/build/aframe-ar.js"></script>
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -32,13 +32,15 @@
     #nerv-fill { background:#00859D; } #anx-fill { background:#411D6B; } #stress-fill { background:#EB4C24; }
     #uiText { position:fixed; bottom:20px; left:0; right:0; background:rgba(255,255,255,0.9); color:#027ACA;
               padding:14px 20px; font-size:1.15em; font-weight:600; text-align:center; line-height:1.5; }
+    #markerHint { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.8);
+                  color:white; padding:20px; border-radius:15px; font-size:1.4em; text-align:center; z-index:5000; display:none; }
   </style>
 </head>
 <body>
 
   <div id="startPage">
-    <div id="logo">ГРАНДАКСИН ПРОТИВ12</div>
-    <div id="rules">Совместите цель с летающим симптомом<br>и нажмите на экран.<br><br>Сбейте как можно больше за 30 секунд!</div>
+    <div id="logo">ГРАНДАКСИН ПРОТИВ</div>
+    <div id="rules">Наведите камеру на чёрно-белый маркер<br>и стреляйте по симптомам!</div>
     <button id="startGameBtn">НАЧАТЬ</button>
   </div>
 
@@ -49,8 +51,11 @@
       <div class="bar"><div class="label">Тревога</div><div id="anx-fill" class="fill"></div></div>
       <div class="bar"><div class="label">Стресс</div><div id="stress-fill" class="fill"></div></div>
     </div>
-    <div id="uiText">Совместите цель с летающим симптомом<br>и нажмите на экран</div>
+    <div id="uiText">Совместите прицел с симптомом<br>и нажмите на экран</div>
   </div>
+
+  <!-- Подсказка, если маркер потерялся -->
+  <div id="markerHint">Маркер потерян!<br>Наведите камеру обратно</div>
 
   <div id="endScreen">
     <div id="endTitle">Спасибо за игру!</div>
@@ -68,15 +73,13 @@
     <button id="playAgainBtn">ИГРАТЬ ЕЩЁ РАЗ</button>
   </div>
 
+  <!-- САМЫЙ СТАБИЛЬНЫЙ РЕЖИМ — МАРКЕР HIRO -->
   <a-scene
     embedded
     arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;"
     renderer="antialias: true; logarithmicDepthBuffer: true;"
     vr-mode-ui="enabled: false"
-    device-orientation-permission-ui="enabled: false"
-    style="display:none"
-    raycaster="objects: .clickable"
-    cursor="rayOrigin: mouse; fuse: false">
+    device-orientation-permission-ui="enabled: false">
 
     <a-assets timeout="60000">
       <a-asset-item id="nerv" src="red.glb"></a-asset-item>
@@ -84,13 +87,17 @@
       <a-asset-item id="stress" src="blue.glb"></a-asset-item>
     </a-assets>
 
-    <a-entity id="models"></a-entity>
+    <!-- Маркер Hiro — суперстабильный -->
+    <a-marker preset="hiro">
+      <a-entity id="models"></a-entity>
+    </a-marker>
 
-    <a-camera>
+    <!-- Подсказка, если маркер не найден -->
+    <a-entity camera>
       <a-cursor position="0 0 -1"
-        geometry="primitive: ring; radiusInner: 0.018; radiusOuter: 0.03"
+        geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
         material="color: white; shader: flat; opacity: 0.8"></a-cursor>
-    </a-camera>
+    </a-entity>
   </a-scene>
 
   <script>
@@ -98,159 +105,11 @@
 
     const sceneEl = document.querySelector('a-scene');
     const modelsGroup = document.getElementById('models');
+    const markerHint = document.getElementById('markerHint');
     let scores = { nerv: 0, anx: 0, stress: 0 };
     let timeLeft = 30;
     let gameActive = false;
     let gameTimer;
 
     document.getElementById('startGameBtn').addEventListener('click', startGame);
-    document.getElementById('playAgainBtn').addEventListener('click', () => location.reload());
-
-    function startGame() {
-      document.getElementById('startPage').style.display = 'none';
-      document.getElementById('gameUI').style.display = 'block';
-      sceneEl.style.display = 'block';
-
-      scores = { nerv: 0, anx: 0, stress: 0 };
-      timeLeft = 30;
-      document.getElementById('timer').textContent = '30';
-      gameActive = true;
-      updateScales();
-
-      if (sceneEl.hasLoaded) initAR();
-      else sceneEl.addEventListener('loaded', initAR);
-
-      gameTimer = setInterval(() => {
-        timeLeft--;
-        document.getElementById('timer').textContent = timeLeft;
-        if (timeLeft <= 0) endGame();
-      }, 1000);
-    }
-
-    function endGame() {
-      gameActive = false;
-      clearInterval(gameTimer);
-      modelsGroup.innerHTML = '';
-      setTimeout(() => {
-        document.getElementById('nerv-result').innerHTML = `Нервозность: <b>${scores.nerv}</b>`;
-        document.getElementById('anx-result').innerHTML = `Тревога: <b>${scores.anx}</b>`;
-        document.getElementById('stress-result').innerHTML = `Стресс: <b>${scores.stress}</b>`;
-        setTimeout(() => {
-          document.getElementById('end-nerv-fill').style.width = Math.min(scores.nerv * 10, 100) + '%';
-          document.getElementById('end-anx-fill').style.width = Math.min(scores.anx * 10, 100) + '%';
-          document.getElementById('end-stress-fill').style.width = Math.min(scores.stress * 10, 100) + '%';
-        }, 300);
-        document.getElementById('gameUI').style.display = 'none';
-        document.getElementById('endScreen').style.display = 'flex';
-      }, 800);
-    }
-
-    function updateScales() {
-      document.getElementById('nerv-fill').style.width = Math.min(scores.nerv * 10, 100) + '%';
-      document.getElementById('anx-fill').style.width = Math.min(scores.anx * 10, 100) + '%';
-      document.getElementById('stress-fill').style.width = Math.min(scores.stress * 10, 100) + '%';
-    }
-
-    // =====================================================
-    // САМОЕ МОЩНОЕ ТРОЙНОЕ СГЛАЖИВАНИЕ — ВАРИАНТ 2
-    // =====================================================
-    function initAR() {
-      // 1. Максимальное встроенное сглаживание AR.js
-      const arSystem = sceneEl.systems.arjs;
-      if (arSystem && arSystem.smoothingFactor !== undefined) {
-        arSystem.smoothingFactor = 0.98; // почти максимум
-      }
-
-      // 2. Глобальное сглаживание камеры (самое жёсткое)
-      const smoothCamPos = new THREE.Vector3();
-      const smoothCamRot = new THREE.Quaternion();
-      let camFirst = true;
-
-      sceneEl.addEventListener('renderstart', () => {
-        const cam = sceneEl.camera;
-        const tick = () => {
-          if (!gameActive || !cam) return;
-
-          if (camFirst) {
-            smoothCamPos.copy(cam.position);
-            smoothCamRot.copy(cam.quaternion);
-            camFirst = false;
-          } else {
-            smoothCamPos.lerp(cam.position, 0.06);
-            smoothCamRot.slerp(cam.quaternion, 0.06);
-            cam.position.copy(smoothCamPos);
-            cam.quaternion.copy(smoothCamRot);
-          }
-          requestAnimationFrame(tick);
-        };
-        tick();
-      });
-
-      spawnAllModels();
-    }
-
-    function spawnAllModels() {
-      ['nerv', 'anx', 'stress'].forEach(type => {
-        for (let i = 0; i < 10; i++) {
-          setTimeout(() => spawnModel(type), i * 350);
-        }
-      });
-    }
-
-    function spawnModel(type) {
-      if (!gameActive) return;
-
-      const el = document.createElement('a-entity');
-      el.setAttribute('gltf-model', `#${type}`);
-      el.classList.add('clickable');
-
-      const scale = 0.12 + Math.random() * 0.22;
-      el.setAttribute('scale', `${scale} ${scale} ${scale}`);
-
-      const dist = 6 + Math.random() * 7;
-      const yaw = (Math.random() * 90 - 45) * Math.PI / 180;
-      const pitch = (Math.random() * 40 - 20) * Math.PI / 180;
-      const x = Math.sin(yaw) * Math.cos(pitch) * dist;
-      const y = Math.sin(pitch) * dist + 1.4;
-      const z = -Math.cos(yaw) * Math.cos(pitch) * dist;
-      el.setAttribute('position', `${x} ${y} ${z}`);
-
-      // 3. Супер-плавный billboard для каждой модели
-      el.addEventListener('model-loaded', () => {
-        const smoothQuat = new THREE.Quaternion();
-        let first = true;
-
-        const tick = () => {
-          if (!el.parentNode || !sceneEl.camera) return;
-
-          const camPos = new THREE.Vector3();
-          sceneEl.camera.getWorldPosition(camPos);
-          el.object3D.lookAt(camPos);
-          el.object3D.rotateY(Math.PI);
-
-          if (first) {
-            smoothQuat.copy(el.object3D.quaternion);
-            first = false;
-          } else {
-            smoothQuat.slerp(el.object3D.quaternion, 0.09);
-            el.object3D.quaternion.copy(smoothQuat);
-          }
-          requestAnimationFrame(tick);
-        };
-        tick();
-      });
-
-      el.addEventListener('click', () => {
-        if (!gameActive) return;
-        scores[type]++;
-        updateScales();
-        el.remove();
-        setTimeout(() => spawnModel(type), 500);
-      });
-
-      modelsGroup.appendChild(el);
-    }
-  </script>
-</body>
-</html>
-
+    document.getElementById('playAgainBtn').
