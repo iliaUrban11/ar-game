@@ -34,7 +34,9 @@ const playAgainBtn = document.getElementById('playAgainBtn');
 
 // Обработчики событий
 startGameBtn.addEventListener('click', startGame);
-playAgainBtn.addEventListener('click', () => location.reload());
+playAgainBtn.addEventListener('click', function() { 
+    location.reload(); 
+});
 
 // Основные функции игры
 function startGame() {
@@ -65,7 +67,7 @@ function startGame() {
     }
     
     // Таймер игры
-    gameTimer = setInterval(() => {
+    gameTimer = setInterval(function() {
         timeLeft--;
         document.getElementById('timer').textContent = timeLeft;
         if (timeLeft <= 0) endGame();
@@ -87,7 +89,7 @@ function initGame() {
 function spawnAllModels() {
     const types = ['nerv', 'anx', 'stress'];
     
-    positions.forEach((position, index) => {
+    positions.forEach(function(position, index) {
         const type = types[Math.floor(index / 10)]; // Равномерное распределение
         const model = createModel(type, position.x, position.y, position.z);
         models.push(model);
@@ -99,35 +101,26 @@ function createModel(type, x, y, z) {
     const element = document.createElement('a-entity');
     
     // Базовые атрибуты
-    element.setAttribute('gltf-model', `#${type}`);
+    element.setAttribute('gltf-model', '#' + type);
     element.setAttribute('data-type', type);
     element.classList.add('clickable');
-    element.setAttribute('scale', `${CONFIG.MODEL_SCALE} ${CONFIG.MODEL_SCALE} ${CONFIG.MODEL_SCALE}`);
-    element.setAttribute('position', `${x} ${y} ${z}`);
-    
-    // Оптимизация производительности
-    element.object3D.matrixAutoUpdate = false;
-    element.object3D.frustumCulled = false;
+    element.setAttribute('scale', CONFIG.MODEL_SCALE + ' ' + CONFIG.MODEL_SCALE + ' ' + CONFIG.MODEL_SCALE);
+    element.setAttribute('position', x + ' ' + y + ' ' + z);
     
     // Обработка загрузки модели
-    element.addEventListener('model-loaded', () => {
+    element.addEventListener('model-loaded', function() {
         const obj = element.object3D;
         
         // Оптимизация всех мешей модели
-        obj.traverse(node => {
+        obj.traverse(function(node) {
             if (node.isMesh) {
                 node.frustumCulled = false;
-                node.castShadow = true;
-                node.receiveShadow = true;
             }
         });
-        
-        // Инициализация матрицы
-        obj.updateMatrix();
     });
     
     // Обработка клика по модели
-    element.addEventListener('click', () => {
+    element.addEventListener('click', function() {
         if (!gameActive || !element.parentNode) return;
         
         // Увеличение счета
@@ -137,7 +130,9 @@ function createModel(type, x, y, z) {
         // Воспроизведение звука
         if (hitSound) {
             hitSound.currentTime = 0;
-            hitSound.play().catch(e => console.log("Ошибка воспроизведения звука:", e));
+            hitSound.play().catch(function(e) { 
+                console.log("Ошибка воспроизведения звука:", e); 
+            });
         }
         
         // Анимация исчезновения
@@ -149,7 +144,7 @@ function createModel(type, x, y, z) {
         });
         
         // Удаление модели
-        setTimeout(() => {
+        setTimeout(function() {
             const index = models.indexOf(element);
             if (index > -1) models.splice(index, 1);
             if (element.parentNode) element.parentNode.removeChild(element);
@@ -165,23 +160,13 @@ function animateRotation() {
     const cameraPos = sceneEl.camera.el.object3D.position;
     
     // Плавный поворот всех моделей к камере
-    models.forEach(model => {
+    models.forEach(function(model) {
         if (!model.object3D || !model.object3D.visible) return;
         
         const obj = model.object3D;
-        const direction = new THREE.Vector3();
-        direction.subVectors(cameraPos, obj.position).normalize();
         
-        // Создание матрицы поворота
-        const rotationMatrix = new THREE.Matrix4();
-        rotationMatrix.lookAt(obj.position, cameraPos, new THREE.Vector3(0, 1, 0));
-        
-        // Целевой кватернион
-        const targetQuaternion = new THREE.Quaternion();
-        targetQuaternion.setFromRotationMatrix(rotationMatrix);
-        
-        // Плавная интерполяция
-        obj.quaternion.slerp(targetQuaternion, CONFIG.ROTATION_SPEED);
+        // Простой поворот без сложных вычислений (убираем тряску)
+        obj.lookAt(cameraPos);
     });
     
     // Рекурсивный вызов для анимации
@@ -189,7 +174,9 @@ function animateRotation() {
 }
 
 function updateScales() {
-    const calculateWidth = (score) => Math.min(score * CONFIG.SCORE_MULTIPLIER, 100) + '%';
+    const calculateWidth = function(score) { 
+        return Math.min(score * CONFIG.SCORE_MULTIPLIER, 100) + '%'; 
+    };
     
     document.getElementById('nerv-fill').style.width = calculateWidth(scores.nerv);
     document.getElementById('anx-fill').style.width = calculateWidth(scores.anx);
@@ -212,15 +199,17 @@ function endGame() {
     modelsGroup.innerHTML = '';
     
     // Задержка перед показом результатов
-    setTimeout(() => {
+    setTimeout(function() {
         // Отображение результатов
-        document.getElementById('nerv-result').innerHTML = `Нервозность: <b>${scores.nerv}</b>`;
-        document.getElementById('anx-result').innerHTML = `Тревога: <b>${scores.anx}</b>`;
-        document.getElementById('stress-result').innerHTML = `Стресс: <b>${scores.stress}</b>`;
+        document.getElementById('nerv-result').innerHTML = 'Нервозность: <b>' + scores.nerv + '</b>';
+        document.getElementById('anx-result').innerHTML = 'Тревога: <b>' + scores.anx + '</b>';
+        document.getElementById('stress-result').innerHTML = 'Стресс: <b>' + scores.stress + '</b>';
         
         // Анимация заполнения прогресс-баров
-        setTimeout(() => {
-            const calculateEndWidth = (score) => Math.min(score * CONFIG.SCORE_MULTIPLIER, 100) + '%';
+        setTimeout(function() {
+            const calculateEndWidth = function(score) { 
+                return Math.min(score * CONFIG.SCORE_MULTIPLIER, 100) + '%'; 
+            };
             
             document.getElementById('end-nerv-fill').style.width = calculateEndWidth(scores.nerv);
             document.getElementById('end-anx-fill').style.width = calculateEndWidth(scores.anx);
@@ -234,6 +223,6 @@ function endGame() {
 }
 
 // Автоматическая инициализация при загрузке
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', function() {
     console.log('Игра "Грандаксин против" загружена и готова к запуску!');
 });
