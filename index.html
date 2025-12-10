@@ -8,64 +8,40 @@
   <script src="https://raw.githack.com/AR-js-org/AR.js/3.4.7/aframe/build/aframe-ar-nft.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: linear-gradient(135deg, #027ACA 0%, #00b894 100%);
-      overflow: hidden; height: 100vh; color: white;
-    }
-    #startPage, #endScreen {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 2000;
-      display: flex; flex-direction: column; justify-content: center; align-items: center;
-      text-align: center; padding: 30px;
-    }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #027ACA 0%, #00b894 100%); overflow: hidden; height: 100vh; color: white; }
+    #startPage, #endScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999;
+      display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 30px; }
     #startPage { background: rgba(255,255,255,0.95); color: #027ACA; }
     #endScreen { background: rgba(2,122,202,0.98); display: none; }
     #logo { font-size: 3.2em; font-weight: 900; margin-bottom: 25px; }
     #rules { font-size: 1.35em; line-height: 1.7; margin-bottom: 50px; max-width: 90%; }
-    #startGameBtn, #playAgainBtn {
-      padding: 18px 60px; background: #027ACA; color: white; font-size: 1.6em; font-weight: 700;
-      border: none; border-radius: 50px; cursor: pointer; box-shadow: 0 10px 30px rgba(2,122,202,0.4);
-      transition: transform 0.3s;
-    }
+    #startGameBtn, #playAgainBtn { padding: 18px 60px; background: #027ACA; color: white; font-size: 1.6em;
+      border: none; border-radius: 50px; cursor: pointer; box-shadow: 0 10px 30px rgba(2,122,202,0.4); transition: transform .3s; }
     #playAgainBtn { background: white; color: #027ACA; }
     #startGameBtn:hover, #playAgainBtn:hover { transform: scale(1.05); }
 
-    #gameUI { position: fixed; z-index: 1000; display: none; width: 100%; pointer-events: none; }
-    #timer {
-      position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
-      background: rgba(255,255,255,0.95); color: #027ACA; padding: 12px 28px;
-      border-radius: 30px; font-size: 2.2em; font-weight: 900; box-shadow: 0 8px 25px rgba(0,0,0,0.3);
-    }
+    #gameUI { position: fixed; z-index: 1000; width: 100%; pointer-events: none; display: none; }
+    #timer { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,0.95);
+      color: #027ACA; padding: 12px 28px; border-radius: 30px; font-size: 2.2em; font-weight: 900; box-shadow: 0 8px 25px rgba(0,0,0,0.3); }
     #progress { position: fixed; top: 90px; left: 20px; right: 20px; display: flex; gap: 12px; }
     .bar { flex: 1; height: 40px; background: rgba(255,255,255,0.15); border-radius: 20px; overflow: hidden; position: relative; }
     .fill { height: 100%; width: 0%; transition: width 0.7s ease; border-radius: 20px; }
-    .label { position: absolute; top: 50%; left: 18px; transform: translateY(-50%); font-size: 15px; font-weight: 700; color: white; text-shadow: 1px 1px 3px black; }
-    #nerv-fill { background: #00859D; }
-    #anx-fill { background: #411D6B; }
-    #stress-fill { background: #EB4C24; }
-    #uiText {
-      position: fixed; bottom: 20px; left: 0; right: 0;
-      background: rgba(255,255,255,0.9); color: #027ACA; padding: 14px 20px;
-      font-size: 1.15em; font-weight: 600; text-align: center; line-height: 1.5;
-      box-shadow: 0 -5px 20px rgba(0,0,0,0.15);
-    }
-    #endTitle { font-size: 3em; font-weight: 900; margin-bottom: 30px; }
-    #endResults { font-size: 1.7em; line-height: 2; margin: 20px 0; }
+    .label { position: absolute; top: 50%; left: 18px; transform: translateY(-50%); font-size: 15px; font-weight: 700;
+      color: white; text-shadow: 1px 1px 3px black; }
+    #nerv-fill { background: #00859D; } #anx-fill { background: #411D6B; } #stress-fill { background: #EB4C24; }
+    #uiText { position: fixed; bottom: 20px; left: 0; right: 0; background: rgba(255,255,255,0.9); color: #027ACA;
+      padding: 14px 20px; font-size: 1.15em; font-weight: 600; text-align: center; line-height: 1.5; }
   </style>
 </head>
 <body>
 
-  <!-- СТАРТ -->
   <div id="startPage">
-    <div id="logo">ГРАНДАКСИН ПРОТИВ</div>
-    <div id="rules">
-      Совместите цель с летающим симптомом<br>и нажмите на экран.<br><br>
-      Сбейте как можно больше за 30 секунд!
-    </div>
+    <div id="logo">ГРАНДАКСИН ПРОТИВ version 1</div>
+    <div id="rules">Совместите цель с летающим симптомом<br>и нажмите на экран.<br><br>Сбейте как можно больше за 30 секунд!</div>
     <button id="startGameBtn">НАЧАТЬ</button>
   </div>
 
-  <!-- UI ИГРЫ -->
   <div id="gameUI">
     <div id="timer">30</div>
     <div id="progress">
@@ -76,7 +52,6 @@
     <div id="uiText">Совместите цель с летающим симптомом<br>и нажмите на экран</div>
   </div>
 
-  <!-- КОНЕЦ -->
   <div id="endScreen">
     <div id="endTitle">Спасибо за игру!</div>
     <div id="endProgress">
@@ -96,179 +71,8 @@
   <a-scene
     embedded
     arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;"
-    renderer="antialias: true;"
+    renderer="antialias: true; logarithmicDepthBuffer: true;"
     vr-mode-ui="enabled: false"
     device-orientation-permission-ui="enabled: false"
-    style="display: none;"
-    cursor="rayOrigin: mouse"
-    raycaster="objects: .clickable"
-  >
-    <a-assets timeout="30000">
-      <a-asset-item id="nerv" src="red.glb"></a-asset-item>
-      <a-asset-item id="anx" src="green.glb"></a-asset-item>
-      <a-asset-item id="stress" src="blue.glb"></a-asset-item>
-    </a-assets>
-
-    <a-entity id="models"></a-entity>
-    <a-camera></a-camera>
-  </a-scene>
-
-  <script>
-    // === ПЕРЕМЕННЫЕ ===
-    let scores = { nerv: 0, anx: 0, stress: 0 };
-    let timeLeft = 30;
-    let gameActive = false;
-    let gameTimer;
-    const sceneEl = document.querySelector('a-scene');
-    const modelsGroup = document.getElementById('models');
-
-    // Элементы UI
-    const startPage = document.getElementById('startPage');
-    const gameUI = document.getElementById('gameUI');
-    const endScreen = document.getElementById('endScreen');
-    const timerEl = document.getElementById('timer');
-
-    // === СТАРТ / РЕСТАРТ ===
-    document.getElementById('startGameBtn').addEventListener('click', startGame);
-    document.getElementById('playAgainBtn').addEventListener('click', () => location.reload());
-
-    function startGame() {
-      startPage.style.display = 'none';
-      gameUI.style.display = 'block';
-      sceneEl.style.display = 'block';
-
-      scores = { nerv: 0, anx: 0, stress: 0 };
-      timeLeft = 30;
-      timerEl.textContent = timeLeft;
-      gameActive = true;
-      updateScales();
-
-      if (sceneEl.hasLoaded) initAR();
-      else sceneEl.addEventListener('loaded', initAR);
-
-      gameTimer = setInterval(() => {
-        timeLeft--;
-        timerEl.textContent = timeLeft;
-        if (timeLeft <= 0) endGame();
-      }, 1000);
-    }
-
-    function endGame() {
-      gameActive = false;
-      clearInterval(gameTimer);
-      modelsGroup.innerHTML = '';
-
-      setTimeout(() => {
-        document.getElementById('nerv-result').innerHTML = `Нервозность: <b>${scores.nerv}</b>`;
-        document.getElementById('anx-result').innerHTML = `Тревога: <b>${scores.anx}</b>`;
-        document.getElementById('stress-result').innerHTML = `Стресс: <b>${scores.stress}</b>`;
-
-        setTimeout(() => {
-          document.getElementById('end-nerv-fill').style.width = Math.min(scores.nerv * 10, 100) + '%';
-          document.getElementById('end-anx-fill').style.width = Math.min(scores.anx * 10, 100) + '%';
-          document.getElementById('end-stress-fill').style.width = Math.min(scores.stress * 10, 100) + '%';
-        }, 300);
-
-        gameUI.style.display = 'none';
-        endScreen.style.display = 'flex';
-      }, 800);
-    }
-
-    // === ГЛАВНОЕ — АНТИ-ТРЯСКА ===
-    function initAR() {
-      // 1. Встроенное сглаживание AR.js (если поддерживается)
-      const arSystem = sceneEl.systems.arjs;
-      if (arSystem && arSystem.smoothingFactor !== undefined) {
-        arSystem.smoothingFactor = 0.85;
-      }
-
-      // 2. Глобальное сглаживание камеры — убирает почти всю тряску
-      const smoothPos = new THREE.Vector3();
-      const smoothQuat = new THREE.Quaternion();
-      const smoothing = 0.12; // 0.08–0.15 — идеально для большинства телефонов
-
-      sceneEl.addEventListener('camera-set-active', () => {
-        const cam = sceneEl.camera;
-        const smoothTick = () => {
-          if (!gameActive) return;
-          smoothPos.lerp(cam.position, smoothing);
-          cam.position.copy(smoothPos);
-          cam.quaternion.slerp(smoothQuat.copy(cam.quaternion), smoothing);
-          requestAnimationFrame(smoothTick);
-        };
-        smoothTick();
-      });
-
-      spawnAllModels();
-    }
-
-    // === СПАВН МОДЕЛЕЙ ===
-    function spawnAllModels() {
-      const types = ['nerv', 'anx', 'stress'];
-      types.forEach(type => {
-        for (let i = 0; i < 10; i++) setTimeout(() => spawnModel(type), i * 300);
-      });
-    }
-
-    function spawnModel(type) {
-      if (!gameActive) return;
-
-      const el = document.createElement('a-entity');
-      el.setAttribute('gltf-model', `#${type}`);
-      el.setAttribute('data-type', type);
-      el.classList.add('clickable');
-
-      // Уменьшили масштаб и увеличили дистанцию — тряска менее заметна
-      const scale = 0.12 + Math.random() * 0.25;
-      el.setAttribute('scale', `${scale} ${scale} ${scale}`);
-
-      const distance = 5 + Math.random() * 8;
-      const yaw = (Math.random() * 100 - 50) * Math.PI / 180;
-      const pitch = (Math.random() * 50 - 25) * Math.PI / 180;
-
-      const x = Math.sin(yaw) * Math.cos(pitch) * distance;
-      const y = Math.sin(pitch) * distance + 1.4;
-      const z = -Math.cos(yaw) * Math.cos(pitch) * distance;
-
-      el.setAttribute('position', `${x} ${y} ${z}`);
-
-      // СГЛАЖЕННЫЙ BILLBOARD (всегда смотрит на камеру плавно)
-      el.addEventListener('model-loaded', () => {
-        const targetQuat = new THREE.Quaternion();
-        const billboardTick = () => {
-          if (!el.parentNode || !sceneEl.camera) return;
-
-          const cameraPos = new THREE.Vector3();
-          sceneEl.camera.getWorldPosition(cameraPos);
-          el.object3D.lookAt(cameraPos);
-          el.object3D.rotateY(Math.PI);
-
-          targetQuat.copy(el.object3D.quaternion);
-          el.object3D.quaternion.slerp(targetQuat, 0.12); // плавный поворот
-
-          requestAnimationFrame(billboardTick);
-        };
-        billboardTick();
-      });
-
-      // Клик — уничтожение
-      el.addEventListener('click', () => {
-        if (!gameActive) return;
-        scores[type]++;
-        updateScales();
-        el.remove();
-        // Респавн нового симптома
-        setTimeout(() => spawnModel(type), 400);
-      });
-
-      modelsGroup.appendChild(el);
-    }
-
-    function updateScales() {
-      document.getElementById('nerv-fill').style.width = Math.min(scores.nerv * 10, 100) + '%';
-      document.getElementById('anx-fill').style.width = Math.min(scores.anx * 10, 100) + '%';
-      document.getElementById('stress-fill').style.width = Math.min(scores.stress * 10, 100) + '%';
-    }
-  </script>
-</body>
-</html>
+    style="display:none"
+    raycaster="objects
