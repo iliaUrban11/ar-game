@@ -31,7 +31,7 @@
 <body>
 
   <div id="startPage">
-    <div id="logo">ГРАНДАКСИН ПРОТИВ1</div>
+    <div id="logo">ГРАНДАКСИН ПРОТИВ23</div>
     <div id="rules">
       Совместите цель с летающим симптомом<br>и нажмите на экран.<br><br>
       Сбейте как можно больше за 30 секунд!
@@ -97,6 +97,151 @@
     <a-entity id="models"></a-entity>
   </a-scene>
 
-  <script src="game.js"></script>
+  <script>
+    // Глобальные переменные
+    let scores = { nerv: 0, anx: 0, stress: 0 };
+    let sceneEl, modelsGroup, timer, animationId;
+    let timeLeft = 30;
+    let active = false;
+    const hit = document.getElementById('hitSound');
+    let models = [];
+
+    // Позиции моделей
+    const positions = [
+      {x:-4,y:2.0,z:-6},{x:-2,y:1.5,z:-5},{x:0,y:2.5,z:-7},{x:3,y:1.8,z:-6},{x:5,y:2.2,z:-8},
+      {x:-3,y:3.0,z:-7},{x:2,y:0.8,z:-5},{x:-1,y:3.5,z:-9},{x:4,y:2.8,z:-7},{x:1,y:1.2,z:-8},
+      {x:-5,y:1.0,z:-7},{x:-3,y:2.8,z:-5},{x:1,y:3.2,z:-6},{x:4,y:1.5,z:-9},{x:-1,y:2.0,z:-8},
+      {x:6,y:2.5,z:-6},{x:-4,y:0.9,z:-5},{x:2,y:3.8,z:-8},{x:-2,y:1.8,z:-9},{x:3,y:2.4,z:-5},
+      {x:0,y:1.0,z:-6},{x:-6,y:2.0,z:-8},{x:5,y:3.0,z:-7},{x:-2,y:2.6,z:-6},{x:3,y:0.7,z:-7},
+      {x:-5,y:3.3,z:-6},{x:4,y:1.3,z:-8},{x:-1,y:2.9,z:-5},{x:2,y:1.6,z:-9},{x:1,y:3.5,z:-7}
+    ];
+
+    // Начало игры
+    document.getElementById('startGameBtn').onclick = function() {
+      document.getElementById('startPage').style.display = 'none';
+      document.getElementById('gameUI').style.display = 'block';
+      sceneEl = document.querySelector('a-scene');
+      modelsGroup = document.getElementById('models');
+      sceneEl.style.display = 'block';
+
+      scores = { nerv: 0, anx: 0, stress: 0 };
+      timeLeft = 30;
+      active = true;
+      models = [];
+      updateBars();
+
+      if (sceneEl.hasLoaded) {
+        start();
+      } else {
+        sceneEl.addEventListener('loaded', start);
+      }
+
+      timer = setInterval(function() {
+        timeLeft--;
+        document.getElementById('timer').textContent = timeLeft;
+        if (timeLeft <= 0) finish();
+      }, 1000);
+    };
+
+    // Перезапуск игры
+    document.getElementById('playAgainBtn').onclick = function() {
+      location.reload();
+    };
+
+    function finish() {
+      active = false;
+      clearInterval(timer);
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+        animationId = null;
+      }
+      modelsGroup.innerHTML = '';
+
+      setTimeout(function() {
+        document.getElementById('nerv-result').innerHTML = 'Нервозность: <b>' + scores.nerv + '</b>';
+        document.getElementById('anx-result').innerHTML = 'Тревога: <b>' + scores.anx + '</b>';
+        document.getElementById('stress-result').innerHTML = 'Стресс: <b>' + scores.stress + '</b>';
+
+        setTimeout(function() {
+          document.getElementById('end-nerv-fill').style.width = Math.min(scores.nerv * 10, 100) + '%';
+          document.getElementById('end-anx-fill').style.width = Math.min(scores.anx * 10, 100) + '%';
+          document.getElementById('end-stress-fill').style.width = Math.min(scores.stress * 10, 100) + '%';
+        }, 300);
+
+        document.getElementById('gameUI').style.display = 'none';
+        document.getElementById('endScreen').style.display = 'flex';
+      }, 800);
+    }
+
+    function start() {
+      modelsGroup.innerHTML = '';
+      
+      positions.forEach(function(p, i) {
+        const type = ['nerv','anx','stress'][Math.floor(i/10)];
+        const el = document.createElement('a-entity');
+        el.setAttribute('gltf-model', '#' + type);
+        el.setAttribute('data-color', type);
+        el.classList.add('clickable');
+        el.setAttribute('scale', '0.35 0.35 0.35');
+        el.setAttribute('position', p.x + ' ' + p.y + ' ' + p.z);
+        
+        // Простая инициализация без сложной логики
+        el.addEventListener('model-loaded', function() {
+          const obj = el.object3D;
+          obj.traverse(function(n) { 
+            if (n.isMesh) {
+              n.frustumCulled = false;
+            }
+          });
+        });
+
+        el.addEventListener('click', function() {
+          if (!active) return;
+          scores[type]++;
+          updateBars();
+          if (hit) {
+            hit.currentTime = 0;
+            hit.play();
+          }
+          el.setAttribute('animation', {property:'scale', to:'0.01 0.01 0.01', dur:300, easing:'easeInBack'});
+          setTimeout(function() {
+            el.parentNode.removeChild(el);
+          }, 350);
+        });
+
+        modelsGroup.appendChild(el);
+        models.push(el);
+      });
+      
+      // Упрощенная анимация поворота
+      rotateModels();
+    }
+
+    function rotateModels() {
+      if (!active || !sceneEl || !sceneEl.camera) {
+        animationId = requestAnimationFrame(rotateModels);
+        return;
+      }
+      
+      const cameraPos = sceneEl.camera.el.object3D.position;
+      
+      // Обходим только видимые модели
+      for (let i = 0; i < models.length; i++) {
+        const model = models[i];
+        if (model.object3D && model.object3D.visible) {
+          // Простой и стабильный поворот
+          model.object3D.lookAt(cameraPos);
+        }
+      }
+      
+      animationId = requestAnimationFrame(rotateModels);
+    }
+
+    function updateBars() {
+      document.getElementById('nerv-fill').style.width = Math.min(scores.nerv * 10, 100) + '%';
+      document.getElementById('anx-fill').style.width = Math.min(scores.anx * 10, 100) + '%';
+      document.getElementById('stress-fill').style.width = Math.min(scores.stress * 10, 100) + '%';
+    }
+  </script>
 </body>
 </html>
