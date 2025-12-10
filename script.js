@@ -4,17 +4,18 @@ let timeLeft = 30;
 let gameActive = false;
 const hitSound = document.getElementById('hitSound');
 
-const predefinedPositions = [
-  {x: -4, y: 2.0, z: -6}, {x: -2, y: 1.5, z: -5}, {x: 0, y: 2.5, z: -7}, {x: 3, y: 1.8, z: -6}, {x: 5, y: 2.2, z: -8},
-  {x: -3, y: 3.0, z: -7}, {x: 2, y: 0.8, z: -5}, {x: -1, y: 3.5, z: -9}, {x: 4, y: 2.8, z: -7}, {x: 1, y: 1.2, z: -8},
-  {x: -5, y: 1.0, z: -7}, {x: -3, y: 2.8, z: -5}, {x: 1, y: 3.2, z: -6}, {x: 4, y: 1.5, z: -9}, {x: -1, y: 2.0, z: -8},
-  {x: 6, y: 2.5, z: -6}, {x: -4, y: 0.9, z: -5}, {x: 2, y: 3.8, z: -8}, {x: -2, y: 1.8, z: -9}, {x: 3, y: 2.4, z: -5},
-  {x: 0, y: 1.0, z: -6}, {x: -6, y: 2.0, z: -8}, {x: 5, y: 3.0, z: -7}, {x: -2, y: 2.6, z: -6}, {x: 3, y: 0.7, z: -7},
-  {x: -5, y: 3.3, z: -6}, {x: 4, y: 1.3, z: -8}, {x: -1, y: 2.9, z: -5}, {x: 2, y: 1.6, z: -9}, {x: 1, y: 3.5, z: -7}
+// 30 фиксированных позиций
+const positions = [
+  {x:-4,y:2.0,z:-6},{x:-2,y:1.5,z:-5},{x:0,y:2.5,z:-7},{x:3,y:1.8,z:-6},{x:5,y:2.2,z:-8},
+  {x:-3,y:3.0,z:-7},{x:2,y:0.8,z:-5},{x:-1,y:3.5,z:-9},{x:4,y:2.8,z:-7},{x:1,y:1.2,z:-8},
+  {x:-5,y:1.0,z:-7},{x:-3,y:2.8,z:-5},{x:1,y:3.2,z:-6},{x:4,y:1.5,z:-9},{x:-1,y:2.0,z:-8},
+  {x:6,y:2.5,z:-6},{x:-4,y:0.9,z:-5},{x:2,y:3.8,z:-8},{x:-2,y:1.8,z:-9},{x:3,y:2.4,z:-5},
+  {x:0,y:1.0,z:-6},{x:-6,y:2.0,z:-8},{x:5,y:3.0,z:-7},{x:-2,y:2.6,z:-6},{x:3,y:0.7,z:-7},
+  {x:-5,y:3.3,z:-6},{x:4,y:1.3,z:-8},{x:-1,y:2.9,z:-5},{x:2,y:1.6,z:-9},{x:1,y:3.5,z:-7}
 ];
 
-document.getElementById('startGameBtn').addEventListener('click', startGame);
-document.getElementById('playAgainBtn').addEventListener('click', () => location.reload());
+document.getElementById('startGameBtn').onclick = startGame;
+document.getElementById('playAgainBtn').onclick = () => location.reload();
 
 function startGame() {
   document.getElementById('startPage').style.display = 'none';
@@ -60,21 +61,20 @@ function endGame() {
 }
 
 function initAR() {
-  spawnFixedModels();
+  spawnAll();
 }
 
-function spawnFixedModels() {
+function spawnAll() {
   const types = ['nerv', 'anx', 'stress'];
-  let index = 0;
-
-  predefinedPositions.forEach(pos => {
-    const type = types[Math.floor(index / 10)];
-    createModel(type, pos.x, pos.y, pos.z);
-    index++;
+  let i = 0;
+  positions.forEach(p => {
+    const type = types[Math.floor(i / 10)];
+    makeModel(type, p.x, p.y, p.z);
+    i++;
   });
 }
 
-function createModel(type, x, y, z) {
+function makeModel(type, x, y, z) {
   const el = document.createElement('a-entity');
   el.setAttribute('gltf-model', `#${type}`);
   el.setAttribute('data-color', type);
@@ -82,22 +82,21 @@ function createModel(type, x, y, z) {
   el.setAttribute('scale', '0.35 0.35 0.35');
   el.setAttribute('position', `${x} ${y} ${z}`);
 
+  // САМАЯ СТАБИЛЬНАЯ СИСТЕМА ПОВОРОТА — НИКАКОЙ ТРЯСКИ
   el.addEventListener('model-loaded', () => {
     const obj = el.object3D;
-    obj.traverse(node => { if (node.isMesh) node.frustumCulled = false; });
+    // Отключаем лишние пересчёты
+    obj.traverse(n => { if (n.isMesh) n.frustumCulled = false; });
 
-    const updateLook = () => {
+    // Поворачиваем только когда камера двигается
+    const update = () => {
       obj.lookAt(sceneEl.camera.position);
-      obj.rotateY(Math.PI);
+      obj.rotateY(Math.PI); // если модель спиной
     };
-
-    sceneEl.camera.el.addEventListener('componentchanged', (evt) => {
-      if (evt.detail.name === 'position' || evt.detail.name === 'rotation') {
-        updateLook();
-      }
+    sceneEl.camera.el.addEventListener('componentchanged', e => {
+      if (e.detail.name === 'position' || e.detail.name === 'rotation') update();
     });
-
-    updateLook();
+    update(); // сразу
   });
 
   el.addEventListener('click', () => {
@@ -106,8 +105,7 @@ function createModel(type, x, y, z) {
     updateScales();
     hitSound.currentTime = 0;
     hitSound.play();
-
-    el.setAttribute('animation', {property: 'scale', to: '0.01 0.01 0.01', dur: 300, easing: 'easeInBack'});
+    el.setAttribute('animation', {property:'scale', to:'0.01 0.01 0.01', dur:300, easing:'easeInBack'});
     setTimeout(() => el.remove(), 350);
   });
 
