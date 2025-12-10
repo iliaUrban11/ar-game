@@ -31,7 +31,7 @@
 <body>
 
   <div id="startPage">
-    <div id="logo">ГРАНДАКСИН ПРОТИВ2</div>
+    <div id="logo">ГРАНДАКСИН ПРОТИВ1</div>
     <div id="rules">
       Совместите цель с летающим симптомом<br>и нажмите на экран.<br><br>
       Сбейте как можно больше за 30 секунд!
@@ -76,9 +76,7 @@
           canvasWidth: 640;
           canvasHeight: 480;
           smoothingFactor: 0.95;"
-    renderer="antialias: true;
-              precision: medium;
-              sortObjects: true"
+    renderer="antialias: true"
     vr-mode-ui="enabled: false"
     device-orientation-permission-ui="enabled: false"
     style="display:none"
@@ -91,7 +89,7 @@
       <a-asset-item id="stress" src="blue.glb"></a-asset-item>
     </a-assets>
 
-    <a-camera look-controls="enabled: true; smoothingFactor: 0.1">
+    <a-camera look-controls="enabled: true">
       <a-cursor position="0 0 -1" geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
                 material="color: white; shader: flat; opacity: 0.6"></a-cursor>
     </a-camera>
@@ -102,4 +100,3 @@
   <script src="game.js"></script>
 </body>
 </html>
-
