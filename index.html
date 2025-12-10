@@ -4,11 +4,8 @@
   <meta charset="utf-8">
   <title>Грандаксин против</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  
-  <!-- Обязательные скрипты -->
   <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
   <script src="https://raw.githack.com/AR-js-org/AR.js/3.4.7/aframe/build/aframe-ar-nft.js"></script>
-
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -80,7 +77,7 @@
     style="display:none"
     raycaster="objects: .clickable"
     cursor="rayOrigin: mouse; fuse: false">
-    
+
     <a-assets timeout="60000">
       <a-asset-item id="nerv" src="red.glb"></a-asset-item>
       <a-asset-item id="anx" src="green.glb"></a-asset-item>
@@ -96,7 +93,6 @@
     </a-camera>
   </a-scene>
 
-  <!-- ВЕСЬ КОД В ОДНОМ СКРИПТЕ, НО БЕЗ INLINE ОБРАБОТЧИКОВ -->
   <script>
     'use strict';
 
@@ -107,7 +103,6 @@
     let gameActive = false;
     let gameTimer;
 
-    // ==== ВСЕ ОБРАБОТЧИКИ ЧЕРЕЗ addEventListener — CSP не ругается ====
     document.getElementById('startGameBtn').addEventListener('click', startGame);
     document.getElementById('playAgainBtn').addEventListener('click', () => location.reload());
 
@@ -136,7 +131,6 @@
       gameActive = false;
       clearInterval(gameTimer);
       modelsGroup.innerHTML = '';
-
       setTimeout(() => {
         document.getElementById('nerv-result').innerHTML = `Нервозность: <b>${scores.nerv}</b>`;
         document.getElementById('anx-result').innerHTML = `Тревога: <b>${scores.anx}</b>`;
@@ -157,31 +151,49 @@
       document.getElementById('stress-fill').style.width = Math.min(scores.stress * 10, 100) + '%';
     }
 
-    // ==== АНТИ-ТРЯСКА (максимально стабильная) ====
+    // =====================================================
+    // САМОЕ МОЩНОЕ ТРОЙНОЕ СГЛАЖИВАНИЕ — ВАРИАНТ 2
+    // =====================================================
     function initAR() {
+      // 1. Максимальное встроенное сглаживание AR.js
       const arSystem = sceneEl.systems.arjs;
-      if (arSystem && arSystem.smoothingFactor !== undefined) arSystem.smoothingFactor = 0.92;
+      if (arSystem && arSystem.smoothingFactor !== undefined) {
+        arSystem.smoothingFactor = 0.98; // почти максимум
+      }
 
-      const smoothPos = new THREE.Vector3();
-      const smoothRot = new THREE.Quaternion();
-      const factor = 0.11;
+      // 2. Глобальное сглаживание камеры (самое жёсткое)
+      const smoothCamPos = new THREE.Vector3();
+      const smoothCamRot = new THREE.Quaternion();
+      let camFirst = true;
 
-      const smoothCamera = () => {
-        if (!gameActive || !sceneEl.camera) return;
-        smoothPos.lerp(sceneEl.camera.position, factor);
-        sceneEl.camera.position.copy(smoothPos);
-        sceneEl.camera.quaternion.slerp(smoothRot.copy(sceneEl.camera.quaternion), factor);
-        requestAnimationFrame(smoothCamera);
-      };
-      smoothCamera();
+      sceneEl.addEventListener('renderstart', () => {
+        const cam = sceneEl.camera;
+        const tick = () => {
+          if (!gameActive || !cam) return;
+
+          if (camFirst) {
+            smoothCamPos.copy(cam.position);
+            smoothCamRot.copy(cam.quaternion);
+            camFirst = false;
+          } else {
+            smoothCamPos.lerp(cam.position, 0.06);
+            smoothCamRot.slerp(cam.quaternion, 0.06);
+            cam.position.copy(smoothCamPos);
+            cam.quaternion.copy(smoothCamRot);
+          }
+          requestAnimationFrame(tick);
+        };
+        tick();
+      });
 
       spawnAllModels();
     }
 
-    // ==== СПАВН ====
     function spawnAllModels() {
       ['nerv', 'anx', 'stress'].forEach(type => {
-        for (let i = 0; i < 10; i++) setTimeout(() => spawnModel(type), i * 350);
+        for (let i = 0; i < 10; i++) {
+          setTimeout(() => spawnModel(type), i * 350);
+        }
       });
     }
 
@@ -195,7 +207,7 @@
       const scale = 0.12 + Math.random() * 0.22;
       el.setAttribute('scale', `${scale} ${scale} ${scale}`);
 
-      const dist = 5.5 + Math.random() * 7;
+      const dist = 6 + Math.random() * 7;
       const yaw = (Math.random() * 90 - 45) * Math.PI / 180;
       const pitch = (Math.random() * 40 - 20) * Math.PI / 180;
       const x = Math.sin(yaw) * Math.cos(pitch) * dist;
@@ -203,16 +215,26 @@
       const z = -Math.cos(yaw) * Math.cos(pitch) * dist;
       el.setAttribute('position', `${x} ${y} ${z}`);
 
+      // 3. Супер-плавный billboard для каждой модели
       el.addEventListener('model-loaded', () => {
-        const target = new THREE.Quaternion();
+        const smoothQuat = new THREE.Quaternion();
+        let first = true;
+
         const tick = () => {
           if (!el.parentNode || !sceneEl.camera) return;
+
           const camPos = new THREE.Vector3();
           sceneEl.camera.getWorldPosition(camPos);
           el.object3D.lookAt(camPos);
           el.object3D.rotateY(Math.PI);
-          target.copy(el.object3D.quaternion);
-          el.object3D.quaternion.slerp(target, 0.13);
+
+          if (first) {
+            smoothQuat.copy(el.object3D.quaternion);
+            first = false;
+          } else {
+            smoothQuat.slerp(el.object3D.quaternion, 0.09);
+            el.object3D.quaternion.copy(smoothQuat);
+          }
           requestAnimationFrame(tick);
         };
         tick();
