@@ -5,111 +5,166 @@
   <title>Грандаксин против</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.7/aframe/build/aframe-ar.js"></script>
+  <script src="https://raw.githack.com/AR-js-org/AR.js/3.4.7/aframe/build/aframe-ar-nft.js"></script>
   <style>
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-           background: linear-gradient(135deg, #027ACA 0%, #00b894 100%); overflow:hidden; height:100vh; color:white; }
-    #startPage, #endScreen { position:fixed; top:0; left:0; width:100%; height:100%; z-index:9999;
-           display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; padding:30px; }
-    #startPage { background:rgba(255,255,255,0.95); color:#027ACA; }
-    #endScreen { background:rgba(2,122,202,0.98); display:none; }
-    #logo { font-size:3.2em; font-weight:900; margin-bottom:25px; }
-    #rules { font-size:1.35em; line-height:1.7; margin-bottom:50px; max-width:90%; }
-    button { padding:18px 60px; background:#027ACA; color:white; font-size:1.6em; font-weight:700;
-             border:none; border-radius:50px; cursor:pointer; box-shadow:0 10px 30px rgba(2,122,202,0.4); transition:transform .3s; }
-    #playAgainBtn { background:white; color:#027ACA; }
-    button:hover { transform:scale(1.05); }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+      background: linear-gradient(135deg, #027ACA 0%, #00b894 100%);
+      overflow: hidden; height: 100vh; color: white;
+    }
 
-    #gameUI { position:fixed; z-index:1000; width:100%; pointer-events:none; display:none; }
-    #timer { position:fixed; top:20px; left:50%; transform:translateX(-50%); background:rgba(255,255,255,0.95);
-             color:#027ACA; padding:12px 28px; border-radius:30px; font-size:2.2em; font-weight:900; }
-    #progress { position:fixed; top:90px; left:20px; right:20px; display:flex; gap:12px; }
-    .bar { flex:1; height:40px; background:rgba(255,255,255,0.15); border-radius:20px; overflow:hidden; position:relative; }
-    .fill { height:100%; width:0%; transition:width .7s ease; border-radius:20px; }
-    .label { position:absolute; top:50%; left:18px; transform:translateY(-50%); font-size:15px; font-weight:700;
-             color:white; text-shadow:1px 1px 3px black; }
-    #nerv-fill { background:#00859D; } #anx-fill { background:#411D6B; } #stress-fill { background:#EB4C24; }
-    #uiText { position:fixed; bottom:20px; left:0; right:0; background:rgba(255,255,255,0.9); color:#027ACA;
-              padding:14px 20px; font-size:1.15em; font-weight:600; text-align:center; line-height:1.5; }
-    #markerHint { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.8);
-                  color:white; padding:20px; border-radius:15px; font-size:1.4em; text-align:center; z-index:5000; display:none; }
+    /* СТАРТОВАЯ СТРАНИЦА */
+    #startPage {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 2000;
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      text-align: center; padding: 30px; background: rgba(255,255,255,0.95); color: #027ACA;
+    }
+    #logo { font-size: 3.2em; font-weight: 900; margin-bottom: 25px; }
+    #rules { font-size: 1.35em; line-height: 1.7; margin-bottom: 50px; max-width: 90%; }
+    #startGameBtn {
+      padding: 18px 60px; background: #027ACA; color: white; font-size: 1.6em; font-weight: 700;
+      border: none; border-radius: 50px; cursor: pointer; box-shadow: 0 10px 30px rgba(2,122,202,0.4);
+      transition: transform 0.3s;
+    }
+    #startGameBtn:hover { transform: scale(1.05); }
+
+    /* UI В ИГРЕ */
+    #gameUI { position: fixed; z-index: 1000; display: none; width: 100%; pointer-events: none; }
+
+    /* ТАЙМЕР — КОМПАКТНЫЙ */
+    #timer {
+      position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+      background: rgba(255,255,255,0.95); color: #027ACA; padding: 12px 28px;
+      border-radius: 30px; font-size: 2.2em; font-weight: 900;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+      pointer-events: auto;
+    }
+
+    /* ШКАЛЫ ВВЕРХУ */
+    #progress {
+      position: fixed; top: 90px; left: 20px; right: 20px;
+      display: flex; gap: 12px; pointer-events: none;
+    }
+    .bar {
+      flex: 1; height: 40px; background: rgba(255,255,255,0.15); 
+      border-radius: 20px; overflow: hidden; position: relative;
+      box-shadow: inset 0 2px 10px rgba(0,0,0,0.2);
+    }
+    .fill { height: 100%; width: 0%; transition: width 0.7s ease; border-radius: 20px; }
+    .label { 
+      position: absolute; top: 50%; left: 18px; transform: translateY(-50%);
+      font-size: 15px; font-weight: 700; color: white; text-shadow: 1px 1px 3px black;
+    }
+
+    #nerv-fill { background: #00859D; }
+    #anx-fill { background: #411D6B; }
+    #stress-fill { background: #EB4C24; }
+
+    /* ОПИСАНИЕ ВНИЗУ — НА ВСЮ ШИРИНУ */
+    #uiText {
+      position: fixed; bottom: 20px; left: 0; right: 0;
+      background: rgba(255,255,255,0.9); color: #027ACA; padding: 14px 20px;
+      font-size: 1.15em; font-weight: 600; text-align: center;
+      line-height: 1.5;
+      box-shadow: 0 -5px 20px rgba(0,0,0,0.15);
+      pointer-events: auto;
+    }
+
+    /* КОНЕЦ ИГРЫ */
+    #endScreen {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 3000;
+      display: none; flex-direction: column; justify-content: center; align-items: center;
+      text-align: center; padding: 40px; background: rgba(2,122,202,0.98);
+    }
+    #endTitle { font-size: 3em; font-weight: 900; margin-bottom: 30px; }
+    #endProgress {
+      width: 85%; max-width: 500px; display: flex; flex-direction: column; gap: 18px; margin: 30px 0;
+    }
+    #endResults {
+      font-size: 1.7em; line-height: 2; margin: 20px 0;
+    }
+    #playAgainBtn {
+      padding: 18px 55px; background: white; color: #027ACA; font-size: 1.5em; font-weight: 800;
+      border: none; border-radius: 50px; cursor: pointer; box-shadow: 0 12px 35px rgba(0,0,0,0.3);
+      transition: all 0.3s;
+    }
+    #playAgainBtn:hover { transform: scale(1.07); }
   </style>
 </head>
 <body>
 
+  <!-- СТАРТ -->
   <div id="startPage">
-    <div id="logo">ГРАНДАКСИН ПРОТИВ</div>
-    <div id="rules">Наведите камеру на чёрно-белый маркер<br>и стреляйте по симптомам!</div>
+    <div id="logo">ГРАНДАКСИН ПРОТИВ test 1</div>
+    <div id="rules">
+      Совместите цель с летающим симптомом<br>
+      и нажмите на экран.<br><br>
+      Сбейте как можно больше за 30 секунд!
+    </div>
     <button id="startGameBtn">НАЧАТЬ</button>
   </div>
 
+  <!-- ИГРА -->
   <div id="gameUI">
     <div id="timer">30</div>
+
     <div id="progress">
       <div class="bar"><div class="label">Нервозность</div><div id="nerv-fill" class="fill"></div></div>
       <div class="bar"><div class="label">Тревога</div><div id="anx-fill" class="fill"></div></div>
       <div class="bar"><div class="label">Стресс</div><div id="stress-fill" class="fill"></div></div>
     </div>
-    <div id="uiText">Совместите прицел с симптомом<br>и нажмите на экран</div>
+
+    <div id="uiText">
+      Совместите цель с летающим симптомом<br>и нажмите на экран
+    </div>
   </div>
 
-  <!-- Подсказка, если маркер потерялся -->
-  <div id="markerHint">Маркер потерян!<br>Наведите камеру обратно</div>
-
+  <!-- КОНЕЦ -->
   <div id="endScreen">
     <div id="endTitle">Спасибо за игру!</div>
+
     <div id="endProgress">
       <div class="bar"><div class="label">Нервозность</div><div id="end-nerv-fill" class="fill"></div></div>
       <div class="bar"><div class="label">Тревога</div><div id="end-anx-fill" class="fill"></div></div>
       <div class="bar"><div class="label">Стресс</div><div id="end-stress-fill" class="fill"></div></div>
     </div>
+
     <div id="endResults">
       Вы уничтожили:<br>
       <span id="nerv-result"></span><br>
       <span id="anx-result"></span><br>
       <span id="stress-result"></span>
     </div>
+
     <button id="playAgainBtn">ИГРАТЬ ЕЩЁ РАЗ</button>
   </div>
 
-  <!-- САМЫЙ СТАБИЛЬНЫЙ РЕЖИМ — МАРКЕР HIRO -->
   <a-scene
     embedded
     arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;"
-    renderer="antialias: true; logarithmicDepthBuffer: true;"
+    renderer="antialias: true;"
     vr-mode-ui="enabled: false"
-    device-orientation-permission-ui="enabled: false">
-
-    <a-assets timeout="60000">
+    device-orientation-permission-ui="enabled: false"
+    style="display: none;"
+    cursor="rayOrigin: mouse"
+    raycaster="objects: .clickable"
+  >
+    <a-assets timeout="30000">
       <a-asset-item id="nerv" src="red.glb"></a-asset-item>
       <a-asset-item id="anx" src="green.glb"></a-asset-item>
       <a-asset-item id="stress" src="blue.glb"></a-asset-item>
     </a-assets>
 
-    <!-- Маркер Hiro — суперстабильный -->
-    <a-marker preset="hiro">
-      <a-entity id="models"></a-entity>
-    </a-marker>
+    <a-camera look-controls="enabled: true">
+      <a-cursor position="0 0 -1" geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
+                material="color: white; shader: flat; opacity: 0.6"></a-cursor>
+    </a-camera>
 
-    <!-- Подсказка, если маркер не найден -->
-    <a-entity camera>
-      <a-cursor position="0 0 -1"
-        geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
-        material="color: white; shader: flat; opacity: 0.8"></a-cursor>
-    </a-entity>
+    <a-entity id="models"></a-entity>
   </a-scene>
 
-  <script>
-    'use strict';
+  <script src="script.js"></script>
+</body>
+</html>
 
-    const sceneEl = document.querySelector('a-scene');
-    const modelsGroup = document.getElementById('models');
-    const markerHint = document.getElementById('markerHint');
-    let scores = { nerv: 0, anx: 0, stress: 0 };
-    let timeLeft = 30;
-    let gameActive = false;
-    let gameTimer;
-
-    document.getElementById('startGameBtn').addEventListener('click', startGame);
-    document.getElementById('playAgainBtn').
